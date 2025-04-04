@@ -21,8 +21,8 @@ class Tabs extends StatelessWidget {
           ),
           body: TabBarView(
             children: [
-              AppUsageApp(), // ✅ Just call the constructor
-              Center(child: Icon(Icons.directions_transit)),
+              AppUsageApp(), 
+              const Center(child: Icon(Icons.directions_transit)),
             ],
           ),
         ),
