@@ -28,6 +28,32 @@ class AppUsageAppState extends State<AppUsageApp> {
     }
   }
 
+void printAppUsageInfo(AppUsageInfo info) {
+  final appName = info.appName;
+  final packageName = info.packageName;
+  final startTime = info.startDate;
+  final endTime = info.endDate;
+  final duration = info.usage;
+
+  print('📱 App Usage Info');
+  print('--------------------');
+  print('App Name     : $appName');
+  print('Package Name : $packageName');
+  print('Start Time   : ${startTime.toLocal()}');
+  print('End Time     : ${endTime.toLocal()}');
+  print('Duration     : ${_formatDuration(duration)}');
+  print('--------------------\n');
+}
+
+String _formatDuration(Duration duration) {
+  String twoDigits(int n) => n.toString().padLeft(2, '0');
+  final hours = twoDigits(duration.inHours);
+  final minutes = twoDigits(duration.inMinutes.remainder(60));
+  final seconds = twoDigits(duration.inSeconds.remainder(60));
+  return '$hours:$minutes:$seconds';
+}
+
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -41,7 +67,11 @@ class AppUsageAppState extends State<AppUsageApp> {
             itemBuilder: (context, index) {
               return ListTile(
                   title: Text(_infos[index].appName),
-                  trailing: Text(_infos[index].usage.toString()));
+                  subtitle: Text(_infos[index].usage.toString()),
+                  trailing: ElevatedButton(
+                    onPressed: () => printAppUsageInfo(_infos[index]),
+                    child: Text("Print"),
+                  ),);
             }),
         floatingActionButton: FloatingActionButton(
             onPressed: getUsageStats, child: Icon(Icons.file_download)),
