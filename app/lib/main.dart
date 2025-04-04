@@ -1,96 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:app_usage/app_usage.dart';
 
+void main() => runApp(AppUsageApp());
 
-void main() {
-  runApp(const MyApp());
-}
-
-
-/**
- * Notes: Added user permissions in app/src/main/AndroidManifest.xml
- * - Also downloaded gradle for java
- */
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
+class AppUsageApp extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'CougHacks 2025',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Blocker'),
-    );
-  }
+  AppUsageAppState createState() => AppUsageAppState();
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
+class AppUsageAppState extends State<AppUsageApp> {
+  List<AppUsageInfo> _infos = [];
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-
   void initState() {
     super.initState();
-    // This runs once when the widget is inserted into the widget tree
-    print('Widget initialized!');
-    getUsageStats();
   }
 
-    void getUsageStats() async {
+  void getUsageStats() async {
     try {
       DateTime endDate = DateTime.now();
       DateTime startDate = endDate.subtract(Duration(hours: 1));
       List<AppUsageInfo> infoList =
           await AppUsage().getAppUsage(startDate, endDate);
-      print("Getting list");
-      print(infoList);
+      setState(() => _infos = infoList);
     } catch (exception) {
       print(exception);
     }
   }
 
-  void _incrementCounter() {
-    setState(() {
-      print("increment");
-      _counter++;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-  
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('App Usage Example'),
+          backgroundColor: Colors.green,
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        body: ListView.builder(
+            itemCount: _infos.length,
+            itemBuilder: (context, index) {
+              return ListTile(
+                  title: Text(_infos[index].appName),
+                  trailing: Text(_infos[index].usage.toString()));
+            }),
+        floatingActionButton: FloatingActionButton(
+            onPressed: getUsageStats, child: Icon(Icons.file_download)),
       ),
     );
   }

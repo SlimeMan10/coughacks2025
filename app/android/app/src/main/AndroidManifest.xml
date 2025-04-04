@@ -2,8 +2,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.hugh.coughacks">
 
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+
     <application
-        android:label="app"
+        android:label="Blockr"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
