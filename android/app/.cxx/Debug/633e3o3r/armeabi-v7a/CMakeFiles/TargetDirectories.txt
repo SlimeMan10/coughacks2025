@@ -1,0 +1,2 @@
+/Users/hughgramelspacher/repos/coughacks2025/app/android/app/.cxx/Debug/633e3o3r/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/hughgramelspacher/repos/coughacks2025/app/android/app/.cxx/Debug/633e3o3r/armeabi-v7a/CMakeFiles/rebuild_cache.dir
