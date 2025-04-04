@@ -1,4 +1,4 @@
 import 'package:flutter/material.dart';
-import 'AppUsage.dart';
+import 'tabs.dart';
 
-void main() => runApp(AppUsageApp());
+void main() => runApp(Tabs());
