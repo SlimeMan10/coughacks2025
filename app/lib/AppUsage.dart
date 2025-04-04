@@ -29,8 +29,8 @@ class AppUsageAppState extends State<AppUsageApp> {
   List<AppUsageInfo> _infos = [];
   bool _isLoading = false;
   String? _error;
+
   // Define the time range for fetching stats
-  // Let's make it configurable or display it
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 1));
   DateTime _endDate = DateTime.now();
 
@@ -52,17 +52,19 @@ class AppUsageAppState extends State<AppUsageApp> {
 
     try {
       // Update end date to now, and start date relative to it
-      // You can adjust this range (e.g., last 24 hours, today, last hour)
-       _endDate = DateTime.now();
-       _startDate = _endDate.subtract(const Duration(days: 1)); // Example: Last 24 hours
+      _endDate = DateTime.now();
+      _startDate = _endDate.subtract(
+        const Duration(days: 1),
+      ); // Example: Last 24 hours
 
-      List<AppUsageInfo> infoList =
-          await AppUsage().getAppUsage(_startDate, _endDate);
+      List<AppUsageInfo> infoList = await AppUsage().getAppUsage(
+        _startDate,
+        _endDate,
+      );
 
       // Filter out apps with zero usage time, sort by usage descending
       infoList.removeWhere((info) => info.usage.inSeconds <= 0);
       infoList.sort((a, b) => b.usage.compareTo(a.usage));
-
 
       setState(() {
         _infos = infoList;
@@ -72,19 +74,26 @@ class AppUsageAppState extends State<AppUsageApp> {
       print("Error fetching usage stats: $exception");
       setState(() {
         _isLoading = false;
-        _error = "Failed to load usage stats.\nPlease ensure permissions are granted.";
+        _error =
+            "Failed to load usage stats.\nPlease ensure permissions are granted.";
         _infos = []; // Clear potentially stale data
       });
-       // Optionally show a SnackBar for the error
-       if (mounted) { // Check if the widget is still in the tree
-           ScaffoldMessenger.of(context).showSnackBar(
-             SnackBar(
-               content: Text(_error!),
-               backgroundColor: Colors.redAccent,
-             ),
-           );
-       }
+      // Optionally show a SnackBar for the error
+      if (mounted) {
+        // Check if the widget is still in the tree
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_error!), backgroundColor: Colors.redAccent),
+        );
+      }
     }
+  }
+
+  // Helper method to get the app with the highest usage
+  AppUsageInfo getMaxUsageApp(List<AppUsageInfo> infos) {
+    if (infos.isEmpty) return infos[0];
+    return infos.reduce(
+      (a, b) => a.usage.inSeconds > b.usage.inSeconds ? a : b,
+    );
   }
 
   // --- Builds the main content body ---
@@ -99,7 +108,10 @@ class AppUsageAppState extends State<AppUsageApp> {
           padding: const EdgeInsets.all(16.0),
           child: Text(
             _error!,
-            style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 16),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.error,
+              fontSize: 16,
+            ),
             textAlign: TextAlign.center,
           ),
         ),
@@ -108,84 +120,80 @@ class AppUsageAppState extends State<AppUsageApp> {
 
     if (_infos.isEmpty) {
       return const Center(
-          child: Text(
-        'No app usage data found for the selected period.\n(Or permissions might be needed)',
-        textAlign: TextAlign.center,
-      ));
+        child: Text(
+          'No app usage data found for the selected period.\n(Or permissions might be needed)',
+          textAlign: TextAlign.center,
+        ),
+      );
     }
+
+    // Find the app with the maximum usage
+    AppUsageInfo maxUsageApp = getMaxUsageApp(_infos);
+    final int maxTime = maxUsageApp.usage.inSeconds;
 
     // Display the list of apps
     return ListView.builder(
       itemCount: _infos.length,
       itemBuilder: (context, index) {
         final info = _infos[index];
-        // Potentially add an icon here in the future
-        // Widget appIcon = Icon(Icons.android); // Placeholder
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-          elevation: 2.0,
-          child: ListTile(
-            // leading: appIcon, // Uncomment when you have icons
-            title: Text(
-              info.appName,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-              overflow: TextOverflow.ellipsis, // Handle long app names
+
+        // Check if the current app is the one with the highest usage
+        final double percentage = info.usage.inSeconds / maxTime;
+
+        // Return the column with the background bar behind the text
+        return Column(
+          children: [
+            // The Stack widget to display the bar behind the text
+            Stack(
+              children: [
+                // Background bar (light black color)
+                Container(
+                  height: 70.0, // Adjust height to fit your content
+                  width: MediaQuery.of(context).size.width,
+                  color: const Color.fromARGB(
+                    80,
+                    0,
+                    0,
+                    0,
+                  ), // Light black background for the bar
+                ),
+                // Foreground bar (black color) based on usage percentage
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  child: Container(
+                    height: 70.0, // Consistent height with background
+                    width:
+                        MediaQuery.of(context).size.width *
+                        percentage, // Percentage width
+                    color: Colors.black, // Color of the filled portion
+                  ),
+                ),
+                // Text on top of the background bar, centered
+                Positioned.fill(
+                  child: Center(
+                    child: Text(
+                      "${info.appName}\n${formatDuration(info.usage)}", // Custom format for app name and usage
+                      textAlign:
+                          TextAlign.center, // Align the text in the center
+                      style: TextStyle(
+                        fontSize: 18.0,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white, // White text for contrast
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            // subtitle: Text(info.packageName), // Optionally show package name
-            trailing: Text(
-              formatDuration(info.usage),
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.bold),
-            ),
-            // Optional: Add onTap for more details later
-            // onTap: () {
-            //   // Navigate to a detail screen or show a dialog
-            //   _showAppDetailsDialog(info);
-            // },
-          ),
+          ],
         );
       },
     );
   }
 
-  // --- Optional: Dialog to show more details ---
-  // void _showAppDetailsDialog(AppUsageInfo info) {
-  //   final dateFormat = DateFormat.yMd().add_jms(); // For formatting dates
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: Text(info.appName),
-  //       content: SingleChildScrollView( // In case content is long
-  //         child: ListBody(
-  //           children: <Widget>[
-  //             Text('Package: ${info.packageName}'),
-  //             const SizedBox(height: 8),
-  //             Text('Total Usage: ${formatDuration(info.usage)}'),
-  //             const SizedBox(height: 8),
-  //             // Note: Start/End dates from the package might represent the query range,
-  //             // not necessarily the first/last usage time within that range.
-  //             // Use them cautiously or fetch more granular data if needed.
-  //             Text('Query Start: ${dateFormat.format(info.startDate.toLocal())}'),
-  //             Text('Query End: ${dateFormat.format(info.endDate.toLocal())}'),
-  //           ],
-  //         ),
-  //       ),
-  //       actions: <Widget>[
-  //         TextButton(
-  //           child: const Text('Close'),
-  //           onPressed: () {
-  //             Navigator.of(context).pop();
-  //           },
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
   @override
   Widget build(BuildContext context) {
-    // Simple date formatting for the subtitle
     final DateFormat formatter = DateFormat('MMM d, HH:mm');
     final String timeRangeString =
         "${formatter.format(_startDate)} - ${formatter.format(_endDate)}";
@@ -194,31 +202,27 @@ class AppUsageAppState extends State<AppUsageApp> {
       appBar: AppBar(
         title: const Text('App Usage Stats'),
         centerTitle: true,
-        // Display the current time range being shown
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(20.0),
           child: Text(
             "Usage for: $timeRangeString",
             style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context).appBarTheme.foregroundColor?.withOpacity(0.8) ?? Colors.white70,
-             ),
-           ),
-         ),
-        // You can add actions here later, like changing the date range
-        // actions: [
-        //   IconButton(
-        //     icon: Icon(Icons.calendar_today),
-        //     onPressed: () { /* Implement date range picker */ },
-        //   ),
-        // ],
+              fontSize: 20,
+              color:
+                  Theme.of(
+                    context,
+                  ).appBarTheme.foregroundColor?.withOpacity(0.8) ??
+                  const Color.fromARGB(255, 0, 0, 0),
+            ),
+          ),
+        ),
       ),
       body: Padding(
-        padding: const EdgeInsets.only(top: 8.0), // Add padding below app bar subtitle
+        padding: const EdgeInsets.only(top: 8.0),
         child: _buildBody(),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: getUsageStats, // Refresh data on press
+        onPressed: getUsageStats,
         tooltip: 'Refresh Stats',
         child: const Icon(Icons.refresh),
       ),
@@ -233,28 +237,23 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Screen Time Demo',
       theme: ThemeData(
-        primarySwatch: Colors.indigo, // Changed theme color
+        primarySwatch: Colors.indigo,
         visualDensity: VisualDensity.adaptivePlatformDensity,
-        useMaterial3: true, // Use Material 3 design
-         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigoAccent), // M3 color scheme
-         appBarTheme: const AppBarTheme(
-           elevation: 1.0, // Subtle shadow
-           // backgroundColor: Colors.indigo, // M2 style
-           // foregroundColor: Colors.white, // M2 style
-         ),
-         cardTheme: CardTheme(
-            clipBehavior: Clip.antiAlias, // Nicer corners
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8.0), // Rounded corners for cards
-           ),
-         ),
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigoAccent),
+        appBarTheme: const AppBarTheme(elevation: 1.0),
+        cardTheme: CardTheme(
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+        ),
       ),
-      home: AppUsageApp(), // Use the improved app screen
+      home: AppUsageApp(),
     );
   }
 }
 
-// --- Entry Point ---
 void main() {
   runApp(MyApp());
 }
