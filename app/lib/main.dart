@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:app_usage/app_usage.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -37,9 +39,30 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
+
+  void initState() {
+    super.initState();
+    // This runs once when the widget is inserted into the widget tree
+    print('Widget initialized!');
+    getUsageStats();
+  }
+
+    void getUsageStats() async {
+    try {
+      DateTime endDate = DateTime.now();
+      DateTime startDate = endDate.subtract(Duration(hours: 1));
+      List<AppUsageInfo> infoList =
+          await AppUsage().getAppUsage(startDate, endDate);
+      print("Getting list");
+      print(infoList);
+    } catch (exception) {
+      print(exception);
+    }
+  }
+
   void _incrementCounter() {
     setState(() {
-    
+      print("increment");
       _counter++;
     });
   }
