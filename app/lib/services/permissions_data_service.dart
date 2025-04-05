@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:installed_apps/installed_apps.dart';
 import 'package:installed_apps/app_info.dart';
+import 'dart:async';
 
 const platform = MethodChannel('com.hugh.coughacks/permissions');
 
@@ -61,27 +62,54 @@ class PermissionsDataService {
   String? get loadError => _loadError;
   List<String> get dangerousPermissionsList => dangerousPermissions;
 
-  // Method to start preloading data
-  Future<void> preloadData() async {
+  // Method to start preloading data with timeout
+  Future<void> preloadData({int timeoutSeconds = 10}) async {
     if (_isLoading || _isLoaded) return;
 
     _notifyLoadingStateChanged(true);
     _isLoading = true;
 
+    // Set up a timeout to prevent hanging
+    Timer? timeoutTimer;
+    final completer = Completer<void>();
+    
+    timeoutTimer = Timer(Duration(seconds: timeoutSeconds), () {
+      if (!completer.isCompleted) {
+        print("⚠️ Permissions data loading timed out after $timeoutSeconds seconds");
+        _isLoaded = true; // Mark as loaded anyway
+        _isLoading = false;
+        _notifyLoadingStateChanged(false);
+        _notifyDataLoaded();
+        completer.complete();
+      }
+    });
+
     try {
-      await _loadPermissionsData();
-      _isLoaded = true;
-      _isLoading = false;
-      _loadError = null;
-      _notifyLoadingStateChanged(false);
-      _notifyDataLoaded();
+      // Start the actual loading process
+      await _loadPermissionsDataInChunks();
+      
+      if (!completer.isCompleted) {
+        _isLoaded = true;
+        _isLoading = false;
+        _loadError = null;
+        _notifyLoadingStateChanged(false);
+        _notifyDataLoaded();
+        completer.complete();
+      }
     } catch (e) {
-      _isLoading = false;
-      _loadError = "Failed to load permissions data: $e";
-      _notifyLoadingStateChanged(false);
-      _notifyError(_loadError!);
-      print("Error preloading permissions data: $e");
+      if (!completer.isCompleted) {
+        _isLoading = false;
+        _loadError = "Failed to load permissions data: $e";
+        _notifyLoadingStateChanged(false);
+        _notifyError(_loadError!);
+        print("❌ Error preloading permissions data: $e");
+        completer.completeError(e);
+      }
+    } finally {
+      timeoutTimer.cancel();
     }
+    
+    return completer.future;
   }
 
   // Method to force reload the data
@@ -104,8 +132,8 @@ class PermissionsDataService {
     }
   }
 
-  // The core data loading implementation
-  Future<void> _loadPermissionsData() async {
+  // Process apps in smaller batches for smoother UI
+  Future<void> _loadPermissionsDataInChunks() async {
     print("🔄 Preloading permissions data...");
 
     // Temporary storage for data processing
@@ -118,21 +146,22 @@ class PermissionsDataService {
       final List<AppInfo> installedApps = await InstalledApps.getInstalledApps(false, true, "");
       _installedApps = installedApps;
 
-      // 2. Process each app's permissions
+      // 2. Process apps in chunks for smoother experience
       print("🔍 Processing app permissions...");
-      for (var app in installedApps) {
-        final permissions = await _getAppPermissions(app.packageName);
-        final dangerous = permissions.where((p) => dangerousPermissions.contains(p)).toList();
-
-        if (dangerous.isNotEmpty) {
-          tempAppToPermissions[app.packageName] = dangerous;
-          for (var permission in dangerous) {
-            tempPermissionsToApps.putIfAbsent(permission, () => []).add(app);
-          }
-        }
+      const int chunkSize = 10; // Process 10 apps at a time
+      
+      for (int i = 0; i < installedApps.length; i += chunkSize) {
+        final end = (i + chunkSize < installedApps.length) ? i + chunkSize : installedApps.length;
+        final chunk = installedApps.sublist(i, end);
+        
+        // Process this chunk
+        await _processAppChunk(chunk, tempPermissionsToApps, tempAppToPermissions);
+        
+        // Allow UI to breathe between chunks
+        await Future.delayed(Duration(milliseconds: 1));
       }
 
-      // 3. Build permission cards lis
+      // 3. Build permission cards list
       print("🃏 Building permission cards...");
       final List<Map<String, dynamic>> cards = [];
 
@@ -158,6 +187,25 @@ class PermissionsDataService {
     } catch (e) {
       print("❌ Error loading permissions data: $e");
       throw e; // Rethrow to be caught by the preload method
+    }
+  }
+  
+  // Process a chunk of apps
+  Future<void> _processAppChunk(
+    List<AppInfo> appChunk,
+    Map<String, List<AppInfo>> tempPermissionsToApps,
+    Map<String, List<String>> tempAppToPermissions
+  ) async {
+    for (var app in appChunk) {
+      final permissions = await _getAppPermissions(app.packageName);
+      final dangerous = permissions.where((p) => dangerousPermissions.contains(p)).toList();
+
+      if (dangerous.isNotEmpty) {
+        tempAppToPermissions[app.packageName] = dangerous;
+        for (var permission in dangerous) {
+          tempPermissionsToApps.putIfAbsent(permission, () => []).add(app);
+        }
+      }
     }
   }
 

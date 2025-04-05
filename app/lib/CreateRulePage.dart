@@ -78,7 +78,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
     _isStrict = rule.isStrict;
   }
 
-  // Modified to show ALL installed apps WITH icons
+  // Modified to only include user apps and specific system apps
   Future<void> _loadInstalledApps() async {
     try {
       if (_installedApps.isNotEmpty) {
@@ -95,32 +95,92 @@ class _CreateRulePageState extends State<CreateRulePage> {
         _appLoadError = null;
       });
 
-      print("Fetching ALL installed apps with icons...");
+      print("Fetching installed apps...");
 
-      // Using the method from installed_apps package
-      // Set withIcon to TRUE to load app icons
-      List<AppInfo> apps = await InstalledApps.getInstalledApps(
-        true, // include system apps - we want ALL apps
-        true, // include app icons for display
-        "", // no filter
+      // First get user apps (with icons)
+      List<AppInfo> userApps = await InstalledApps.getInstalledApps(
+        false, // exclude system apps
+        true,  // include app icons
+        "",    // no filter
       ).timeout(
-        Duration(seconds: 8), // increased timeout for icon loading
+        Duration(seconds: 8),
         onTimeout: () {
-          throw Exception("Timed out while loading apps. Please try again.");
+          throw Exception("Timed out while loading user apps");
         },
       );
+      
+      print("Fetched ${userApps.length} user apps with icons");
 
-      print("Successfully fetched ${apps.length} apps from device");
-
+      // Then get system apps (with icons)
+      List<AppInfo> systemApps = await InstalledApps.getInstalledApps(
+        true,  // include system apps only
+        true,  // include app icons
+        "",    // no filter
+      ).timeout(
+        Duration(seconds: 8),
+        onTimeout: () {
+          throw Exception("Timed out while loading system apps");
+        },
+      );
+      
+      print("Fetched ${systemApps.length} system apps with icons");
+      
+      // Filter system apps to only include the important ones we care about
+      List<String> importantPackageNames = [
+        'com.google.android.youtube',
+        'com.google.android.gm',
+        'com.google.android.googlequicksearchbox',
+        'com.android.chrome'
+      ];
+      
+      List<AppInfo> filteredSystemApps = systemApps.where((app) => 
+        importantPackageNames.contains(app.packageName)
+      ).toList();
+      
+      print("Filtered to ${filteredSystemApps.length} important system apps");
+      
+      // Combine both lists
+      List<AppInfo> allApps = [...userApps, ...filteredSystemApps];
+      
+      // Remove any duplicates that might exist
+      final seen = <String>{};
+      allApps = allApps.where((app) => seen.add(app.packageName)).toList();
+      
       // Sort by name for better usability
-      apps.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-
+      allApps.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      
+      // Make sure important apps are in the list
+      for (var entry in _importantApps.entries) {
+        String packageName = entry.key;
+        String appName = entry.value;
+        
+        // Check if this app exists in our fetched apps
+        bool found = allApps.any((app) => app.packageName == packageName);
+        
+        if (!found) {
+          print("Important app not found in device scan: $appName ($packageName)");
+        } else {
+          // Mark that we found it for debugging
+          print("Found important app: $appName ($packageName)");
+          
+          // Check if it has an icon
+          bool hasIcon = allApps.any((app) => app.packageName == packageName && app.icon != null);
+          
+          if (!hasIcon) {
+            print("No icon found for important app: $appName ($packageName)");
+          } else {
+            print("Icon available for important app: $appName ($packageName)");
+          }
+        }
+      }
+      
       setState(() {
-        _installedApps = apps;
+        _installedApps = allApps;
         _isLoadingApps = false;
       });
 
-      print("App list ready with ${apps.length} total apps");
+      print("App list ready with ${allApps.length} total installed apps");
+      
     } catch (e) {
       setState(() {
         _isLoadingApps = false;
@@ -770,8 +830,21 @@ class _CreateRulePageState extends State<CreateRulePage> {
   }
 
   void _showAppSelectionBottomSheet(BuildContext context) {
-    TextEditingController searchController = TextEditingController();
+    final TextEditingController searchController = TextEditingController();
     List<AppInfo> filteredApps = List.from(_installedApps);
+
+    void filterApps(String query) {
+      if (query.isEmpty) {
+        filteredApps = List.from(_installedApps);
+      } else {
+        final lowercaseQuery = query.toLowerCase();
+        filteredApps = _installedApps.where((app) {
+          final name = app.name.toLowerCase();
+          final package = app.packageName.toLowerCase();
+          return name.contains(lowercaseQuery) || package.contains(lowercaseQuery);
+        }).toList();
+      }
+    }
 
     showModalBottomSheet(
       context: context,
@@ -782,20 +855,6 @@ class _CreateRulePageState extends State<CreateRulePage> {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
-            void filterApps(String query) {
-              setModalState(() {
-                if (query.isEmpty) {
-                  filteredApps = List.from(_installedApps);
-                } else {
-                  filteredApps = _installedApps
-                      .where((app) =>
-                          app.name.toLowerCase().contains(query.toLowerCase()) ||
-                          app.packageName.toLowerCase().contains(query.toLowerCase()))
-                      .toList();
-                }
-              });
-            }
-
             return Container(
               height: MediaQuery.of(context).size.height * 0.8,
               padding: EdgeInsets.all(16),
@@ -935,135 +994,37 @@ class _CreateRulePageState extends State<CreateRulePage> {
                     Expanded(
                       child: ListView(
                         children: [
-                          // Important apps section - always show these firs
-                          if (searchController.text.isEmpty) ...[
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
-                              child: Text(
-                                'Popular Apps',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue,
-                                ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Text(
+                              'Apps',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey.shade700,
                               ),
                             ),
-                            ..._importantApps.entries.map((entry) {
-                              final packageName = entry.key;
-                              final appName = entry.value;
-                              final bool isSelected = _selectedApps.contains(packageName);
-                              // Find if this app is in the installed apps lis
-                              final installedApp = _installedApps.any((app) =>
-                                app.packageName == packageName);
+                          ),
 
-                              return ListTile(
-                                leading: Icon(
-                                  _getIconForApp(packageName),
-                                  size: 28,
-                                  color: Colors.grey.shade600,
-                                ),
-                                title: Text(
-                                  appName,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      packageName,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade600,
-                                        fontFamily: 'monospace',
-                                      ),
-                                    ),
-                                    if (isSelected)
-                                      Text(
-                                        'Selected for blocking',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.red.shade700,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    if (!installedApp)
-                                      Text(
-                                        'Not installed on device',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.orange.shade700,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                trailing: Checkbox(
-                                  value: isSelected,
-                                  onChanged: (value) {
-                                    setModalState(() {
-                                      if (value == true) {
-                                        _selectedApps.add(packageName);
-                                        print("Added to block list: $appName ($packageName)");
-                                      } else {
-                                        _selectedApps.remove(packageName);
-                                        print("Removed from block list: $appName ($packageName)");
-                                      }
-                                    });
-                                    // Update parent state too
-                                    setState(() {});
-                                  },
-                                  activeColor: Colors.black,
-                                ),
-                                onTap: () {
-                                  setModalState(() {
-                                    if (isSelected) {
-                                      _selectedApps.remove(packageName);
-                                      print("Removed from block list: $appName ($packageName)");
-                                    } else {
-                                      _selectedApps.add(packageName);
-                                      print("Added to block list: $appName ($packageName)");
-                                    }
-                                  });
-                                  // Update parent state too
-                                  setState(() {});
-                                },
-                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                                dense: true,
-                              );
-                            }).toList(),
-
-                            Divider(thickness: 1),
-
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
-                              child: Text(
-                                'All Apps',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey.shade700,
-                                ),
-                              ),
-                            ),
-                          ],
-
-                          // Regular installed apps lis
+                          // All apps (including important apps)
                           ...filteredApps.map((app) {
                             final isSelected = _selectedApps.contains(app.packageName);
-                            // Skip if this app is one of our important apps (already shown above)
-                            if (searchController.text.isEmpty && _importantApps.containsKey(app.packageName)) {
-                              return SizedBox.shrink();
-                            }
-
+                            // Use custom icon for important apps if app has no icon
+                            final bool isImportantApp = _importantApps.containsKey(app.packageName);
                             return ListTile(
                               leading: app.icon != null
                                   ? Image.memory(app.icon!, width: 28, height: 28)
-                                  : Icon(Icons.android, size: 28, color: Colors.grey.shade600),
+                                  : Icon(
+                                      isImportantApp 
+                                          ? _getIconForApp(app.packageName) 
+                                          : Icons.android,
+                                      size: 28,
+                                      color: Colors.grey.shade600
+                                    ),
                               title: Text(
-                                app.name.isEmpty ? "Unknown App" : app.name,
+                                app.name.isEmpty 
+                                    ? (isImportantApp ? _importantApps[app.packageName]! : "Unknown App") 
+                                    : app.name,
                                 style: TextStyle(
                                   fontWeight: FontWeight.w500,
                                   color: Colors.black,
