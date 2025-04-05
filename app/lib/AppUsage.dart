@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:app_usage/app_usage.dart';
-import 'package:intl/intl.dart'; // For date formatting if needed later
+import 'package:installed_apps/installed_apps.dart'; // Add this
+import 'package:installed_apps/app_info.dart'; // Add this
+import 'package:intl/intl.dart';
 
 // Helper function to format Duration into a user-friendly string
 String formatDuration(Duration duration) {
@@ -27,42 +29,43 @@ class AppUsageApp extends StatefulWidget {
 
 class AppUsageAppState extends State<AppUsageApp> {
   List<AppUsageInfo> _infos = [];
+  Map<String, AppInfo> _appMap = {}; // Map package names to app details
   bool _isLoading = false;
   String? _error;
-
-  // Define the time range for fetching stats
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 1));
   DateTime _endDate = DateTime.now();
 
   @override
   void initState() {
     super.initState();
-    // Load usage stats when the widget is first created
-    getUsageStats();
+    getUsageStatsAndIcons();
   }
 
-  Future<void> getUsageStats() async {
-    // Don't fetch if already loading
+  Future<void> getUsageStatsAndIcons() async {
     if (_isLoading) return;
 
     setState(() {
       _isLoading = true;
-      _error = null; // Clear previous errors
+      _error = null;
     });
 
     try {
-      // Update end date to now, and start date relative to it
       _endDate = DateTime.now();
-      _startDate = _endDate.subtract(
-        const Duration(days: 1),
-      ); // Example: Last 24 hours
+      _startDate = _endDate.subtract(const Duration(days: 1));
 
-      List<AppUsageInfo> infoList = await AppUsage().getAppUsage(
-        _startDate,
-        _endDate,
+      // Fetch app usage stats
+      List<AppUsageInfo> infoList =
+          await AppUsage().getAppUsage(_startDate, _endDate);
+
+      // Fetch installed apps with icons
+      List<AppInfo> installedApps = await InstalledApps.getInstalledApps(
+        false, // excludeSystemApps
+        true,  // withIcon
+        "",    // packageNamePrefix (empty for all apps)
       );
+      _appMap = {for (var app in installedApps) app.packageName: app};
 
-      // Filter out apps with zero usage time, sort by usage descending
+      // Filter and sort usage stats
       infoList.removeWhere((info) => info.usage.inSeconds <= 0);
       infoList.sort((a, b) => b.usage.compareTo(a.usage));
 
@@ -71,32 +74,23 @@ class AppUsageAppState extends State<AppUsageApp> {
         _isLoading = false;
       });
     } catch (exception) {
-      print("Error fetching usage stats: $exception");
+      print("Error fetching data: $exception");
       setState(() {
         _isLoading = false;
-        _error =
-            "Failed to load usage stats.\nPlease ensure permissions are granted.";
-        _infos = []; // Clear potentially stale data
+        _error = "Failed to load data.\nEnsure permissions are granted.";
+        _infos = [];
       });
-      // Optionally show a SnackBar for the error
       if (mounted) {
-        // Check if the widget is still in the tree
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_error!), backgroundColor: Colors.redAccent),
+          SnackBar(
+            content: Text(_error!),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     }
   }
 
-  // Helper method to get the app with the highest usage
-  AppUsageInfo getMaxUsageApp(List<AppUsageInfo> infos) {
-    if (infos.isEmpty) return infos[0];
-    return infos.reduce(
-      (a, b) => a.usage.inSeconds > b.usage.inSeconds ? a : b,
-    );
-  }
-
-  // --- Builds the main content body ---
   Widget _buildBody() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -120,73 +114,48 @@ class AppUsageAppState extends State<AppUsageApp> {
 
     if (_infos.isEmpty) {
       return const Center(
-        child: Text(
-          'No app usage data found for the selected period.\n(Or permissions might be needed)',
-          textAlign: TextAlign.center,
-        ),
-      );
+          child: Text(
+        'No app usage data found.\n(Or permissions might be needed)',
+        textAlign: TextAlign.center,
+      ));
     }
 
-    // Find the app with the maximum usage
-    AppUsageInfo maxUsageApp = getMaxUsageApp(_infos);
-    final int maxTime = maxUsageApp.usage.inSeconds;
-
-    // Display the list of apps
     return ListView.builder(
       itemCount: _infos.length,
       itemBuilder: (context, index) {
         final info = _infos[index];
+        // Get the app info from the map
+        final app = _appMap[info.packageName];
+        Widget appIcon = Icon(
+          Icons.android,
+          size: 40,
+          color: Theme.of(context).colorScheme.primary,
+        ); // Default icon
+        if (app != null && app.icon != null) {
+          appIcon = Image.memory(
+            app.icon!,
+            width: 40,
+            height: 40,
+          );
+        }
 
-        // Check if the current app is the one with the highest usage
-        final double percentage = info.usage.inSeconds / maxTime;
-
-        // Return the column with the background bar behind the text
-        return Column(
-          children: [
-            // The Stack widget to display the bar behind the text
-            Stack(
-              children: [
-                // Background bar (light black color)
-                Container(
-                  height: 70.0, // Adjust height to fit your content
-                  width: MediaQuery.of(context).size.width,
-                  color: const Color.fromARGB(
-                    80,
-                    0,
-                    0,
-                    0,
-                  ), // Light black background for the bar
-                ),
-                // Foreground bar (black color) based on usage percentage
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  child: Container(
-                    height: 70.0, // Consistent height with background
-                    width:
-                        MediaQuery.of(context).size.width *
-                        percentage, // Percentage width
-                    color: Colors.black, // Color of the filled portion
-                  ),
-                ),
-                // Text on top of the background bar, centered
-                Positioned.fill(
-                  child: Center(
-                    child: Text(
-                      "${info.appName}\n${formatDuration(info.usage)}", // Custom format for app name and usage
-                      textAlign:
-                          TextAlign.center, // Align the text in the center
-                      style: TextStyle(
-                        fontSize: 18.0,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white, // White text for contrast
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+          elevation: 2.0,
+          child: ListTile(
+            leading: appIcon, // Display the app icon here
+            title: Text(
+              info.appName,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
+            trailing: Text(
+              formatDuration(info.usage),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold),
+            ),
+          ),
         );
       },
     );
@@ -207,12 +176,8 @@ class AppUsageAppState extends State<AppUsageApp> {
           child: Text(
             "Usage for: $timeRangeString",
             style: TextStyle(
-              fontSize: 20,
-              color:
-                  Theme.of(
-                    context,
-                  ).appBarTheme.foregroundColor?.withOpacity(0.8) ??
-                  const Color.fromARGB(255, 0, 0, 0),
+              fontSize: 12,
+              color: Theme.of(context).appBarTheme.foregroundColor?.withOpacity(0.8) ?? Colors.white70,
             ),
           ),
         ),
@@ -222,7 +187,7 @@ class AppUsageAppState extends State<AppUsageApp> {
         child: _buildBody(),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: getUsageStats,
+        onPressed: getUsageStatsAndIcons,
         tooltip: 'Refresh Stats',
         child: const Icon(Icons.refresh),
       ),
@@ -230,7 +195,6 @@ class AppUsageAppState extends State<AppUsageApp> {
   }
 }
 
-// --- Main App Widget ---
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
