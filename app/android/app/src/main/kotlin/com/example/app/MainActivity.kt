@@ -8,7 +8,7 @@ import android.content.pm.PackageManager
 import android.content.Intent
 
 class MainActivity: FlutterActivity() {
-    private val CHANNEL = "com.example.app/permissions"
+    private val CHANNEL = "com.hugh.coughacks/permissions"
 
     override fun configureFlutterEngine(flutterEngine: io.flutter.embedding.engine.FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
