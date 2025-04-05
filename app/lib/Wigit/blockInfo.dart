@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Parent StatefulWidget class
 class BlockInfo extends StatefulWidget {
@@ -26,6 +27,9 @@ class _BlockInfoState extends State<BlockInfo> {
   
   // Enable/disable flag
   bool _enableLimits = true;
+
+  List<String> get exemptApps => [..._exemptApps];
+  List<bool> get selectedDays => [..._selectedDays];
 
   @override
   Widget build(BuildContext context) {
@@ -230,16 +234,31 @@ class _BlockInfoState extends State<BlockInfo> {
     );
   }
 
-  void _saveSettings() {
-    // Here you would save the settings to preferences or a database
-    // Show a snackbar without navigating away
+  Future<void> _saveSettings() async {
+    // Get SharedPreferences instance
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Save all settings
+    await prefs.setInt('dailyTimeLimit', _dailyTimeLimit);
+    await prefs.setString('startTimeHour', _startTime.hour.toString());
+    await prefs.setString('startTimeMinute', _startTime.minute.toString());
+    await prefs.setString('endTimeHour', _endTime.hour.toString());
+    await prefs.setString('endTimeMinute', _endTime.minute.toString());
+    await prefs.setBool('enableLimits', _enableLimits);
+    
+    // Save selected days (converting List<bool> to List<String>)
+    await prefs.setStringList('selectedDays', 
+      _selectedDays.map((day) => day.toString()).toList());
+    
+    // Save exempt apps
+    await prefs.setStringList('exemptApps', _exemptApps);
+    
+    // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Screen time settings saved'),
         duration: Duration(seconds: 2),
       ),
     );
-    
-    // Stay on the current screen - remove the Navigator.pop line
   }
 }
