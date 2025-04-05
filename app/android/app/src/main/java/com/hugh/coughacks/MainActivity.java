@@ -10,8 +10,6 @@ import android.os.Build;
 import android.widget.Toast;
 import android.content.Intent;
 import android.util.Log;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 
 import androidx.annotation.NonNull;
 
@@ -21,13 +19,9 @@ import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class MainActivity extends FlutterActivity {
   private static final String CHANNEL = "com.hugh/accessibility";
   private static final String RULE_CHANNEL = "com.hugh.coughacks/rule_check";
-  private static final String PERMISSIONS_CHANNEL = "com.hugh.coughacks/permissions";
   private static final String TAG = "MainActivity";
 
   private void requestOverlayPermission() {
@@ -104,53 +98,6 @@ public class MainActivity extends FlutterActivity {
                 result.notImplemented();
             }
         });
-        
-    // Add permissions channel for getting app permissions
-    new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), PERMISSIONS_CHANNEL)
-        .setMethodCallHandler((call, result) -> {
-            if (call.method.equals("getPermissions")) {
-                String packageName = call.argument("packageName");
-                Log.d(TAG, "📲 Request permissions for app: " + packageName);
-                
-                if (packageName != null) {
-                    try {
-                        List<String> permissions = getPermissions(packageName);
-                        Log.d(TAG, "📲 Found " + permissions.size() + " permissions for " + packageName);
-                        result.success(permissions);
-                    } catch (Exception e) {
-                        Log.e(TAG, "⚠️ Error getting permissions: " + e.getMessage());
-                        result.error("PERMISSIONS_ERROR", e.getMessage(), null);
-                    }
-                } else {
-                    Log.e(TAG, "⚠️ Package name is null");
-                    result.error("INVALID_ARGUMENT", "Package name is required", null);
-                }
-            } else {
-                Log.d(TAG, "⚠️ Unknown method called: " + call.method);
-                result.notImplemented();
-            }
-        });
-  }
-
-  private List<String> getPermissions(String packageName) {
-    try {
-        PackageInfo packageInfo = getPackageManager().getPackageInfo(packageName, PackageManager.GET_PERMISSIONS);
-        
-        if (packageInfo.requestedPermissions == null) {
-            Log.d(TAG, "No permissions found for " + packageName);
-            return new ArrayList<>();
-        }
-        
-        List<String> permissions = new ArrayList<>();
-        for (String permission : packageInfo.requestedPermissions) {
-            permissions.add(permission);
-        }
-        
-        return permissions;
-    } catch (Exception e) {
-        Log.e(TAG, "Error fetching permissions: " + e.getMessage());
-        return new ArrayList<>();
-    }
   }
 
   public static boolean isAccessibilityServiceEnabled(Context context, Class<?> service) {
