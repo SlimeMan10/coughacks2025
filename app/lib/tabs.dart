@@ -1,7 +1,7 @@
 import 'package:app/Permissions.dart';
 import 'package:app/blocking.dart';
 import 'package:flutter/material.dart';
-import 'AppUsage.dart'; // Make sure this exports AppUsageApp
+import 'AppUsage.dart';
 import 'blockInfo.dart';
 
 class Tabs extends StatefulWidget {
@@ -29,6 +29,23 @@ class _TabsState extends State<Tabs> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        scaffoldBackgroundColor: const Color(0xFF101010),
+        colorScheme: ColorScheme.fromSwatch().copyWith(
+          primary: Colors.white,
+          secondary: Colors.grey[800],
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(color: Colors.white),
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Colors.transparent,
+          selectedItemColor: Colors.white,
+          unselectedItemColor: Colors.grey,
+        ),
+      ),
       home: Scaffold(
         body: TabBarView(
           controller: _tabController,
@@ -39,17 +56,20 @@ class _TabsState extends State<Tabs> with SingleTickerProviderStateMixin {
             BlockInfo(title: 'Block Info Placeholder'),
           ],
         ),
-        bottomNavigationBar: Material(
-          color: Colors.white60,
+        bottomNavigationBar: Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF1A1A1A),
+            border: Border(top: BorderSide(color: Colors.white12)),
+          ),
           child: TabBar(
             controller: _tabController,
-            labelColor: const Color.fromARGB(255, 0, 0, 0),
-            unselectedLabelColor: const Color.fromARGB(153, 83, 82, 82),
             indicatorColor: Colors.white,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.grey,
             tabs: const [
               Tab(icon: Icon(Icons.bar_chart)),
-              Tab(icon: Icon(Icons.warning)),
-              Tab(icon: Icon(Icons.wallet)),
+              Tab(icon: Icon(Icons.warning_amber_outlined)),
+              Tab(icon: Icon(Icons.shield_outlined)),
               Tab(icon: Icon(Icons.block)),
             ],
           ),
