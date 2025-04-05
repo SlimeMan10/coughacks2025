@@ -56,7 +56,7 @@ class _TabsState extends State<Tabs> with SingleTickerProviderStateMixin {
             PermissionsTab(),
             Blocking(),
             RulesPage(),
-            BlockInfo(title: 'Block Info Placeholder'),
+            BlockInfo(),
             LocalLeaderboard(),
           ],
         ),
