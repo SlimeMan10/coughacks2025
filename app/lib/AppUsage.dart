@@ -102,7 +102,18 @@ class AppUsageAppState extends State<AppUsageApp>
     _startDate = DateTime(start.year, start.month, start.day, 3);
     _endDate = DateTime(end.year, end.month, end.day, now.hour, now.minute, now.second);
     getUsageStatsAndInsights();
+  } 
+   final ScreenshotController _screenshotController = ScreenshotController();
+
+  
+  void _shareScreenshot() {
+    
+    ShareScreenshot(
+      context: context,
+      screenshotController: _screenshotController,
+    ).captureAndShare();
   }
+
 
   Future<void> getUsageStatsAndInsights() async {
     if (_isLoading) return;
@@ -236,14 +247,47 @@ class AppUsageAppState extends State<AppUsageApp>
     return Colors.green;
   }
 
+  List<int> getScreentimeLast7Days({
+  required List<Map<String, dynamic>> usageData,
+}) {
+  // usageData example: [{ 'timestamp': DateTime, 'minutes': int }]
+  final now = DateTime.now();
+  final currentDayBoundary = DateTime(now.year, now.month, now.day, 3); // 3 AM today
+
+  // If current time is before 3 AM, today belongs to "yesterday"
+  final startOfToday = now.isBefore(currentDayBoundary)
+      ? currentDayBoundary.subtract(const Duration(days: 1))
+      : currentDayBoundary;
+
+  List<int> screenTimePerDay = List.filled(7, 0);
+
+  for (var entry in usageData) {
+    final timestamp = entry['timestamp'] as DateTime;
+    final minutes = entry['minutes'] as int;
+
+    // Calculate custom day index (0 = today, 1 = yesterday, ..., 6 = 6 days ago)
+    for (int i = 0; i < 7; i++) {
+      final dayStart = startOfToday.subtract(Duration(days: i));
+      final dayEnd = dayStart.add(const Duration(days: 1));
+      if (timestamp.isAfter(dayStart) && timestamp.isBefore(dayEnd)) {
+        screenTimePerDay[i] += minutes;
+        break;
+      }
+    }
+  }
+
+  return screenTimePerDay;
+}
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final DateFormat formatter = DateFormat('MMM d, HH:mm');
     final String timeRangeString =
         "${formatter.format(_startDate)} - ${formatter.format(_endDate)}";
-
-    return Scaffold(
+    return Screenshot(
+      controller: _screenshotController,
+      child: Scaffold(
       backgroundColor: const Color(0xFF121212),
       body: CustomScrollView(
         slivers: [
@@ -315,9 +359,10 @@ class AppUsageAppState extends State<AppUsageApp>
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.white12,
         foregroundColor: Colors.white,
-        onPressed: () => _updateDateRange(_dateRange),
-        child: const Icon(Icons.refresh),
+        onPressed: _shareScreenshot,
+        child: const Icon(Icons.share),
       ),
+    ),
     );
   }
 
