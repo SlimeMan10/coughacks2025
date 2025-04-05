@@ -44,6 +44,7 @@ class _RulesPageState extends State<RulesPage> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 16.0),
         child: FloatingActionButton(
+          heroTag: 'createRuleButton',
           onPressed: onPressed,
           child: Container(
             width: 24,
