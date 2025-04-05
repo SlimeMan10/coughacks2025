@@ -148,31 +148,42 @@ class AppUsageAppState extends State<AppUsageApp> with SingleTickerProviderState
     if (_isLoading) return const Center(child: CircularProgressIndicator());
     if (_permissionsMap.isEmpty) return const Center(child: Text('No permission data available.', textAlign: TextAlign.center));
 
-    return ListView.builder(
-      itemCount: _appMap.length,
-      itemBuilder: (context, index) {
-        final app = _appMap.values.elementAt(index);
-        final permissions = _permissionsMap[app.packageName] ?? [];
-        final hasRisks = permissions.any((p) => _privacyRisks.contains(p));
 
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-          elevation: 2.0,
-          color: hasRisks ? Colors.orange[50] : null, // Highlight risky apps
-          child: ExpansionTile(
-            leading: app.icon != null ? Image.memory(app.icon!, width: 40, height: 40) : const Icon(Icons.android, size: 40),
-            title: Text(app.name, style: const TextStyle(fontWeight: FontWeight.w500)),
-            subtitle: Text(hasRisks ? 'Potential Privacy Risks' : 'No major risks detected', style: TextStyle(color: hasRisks ? Colors.red : Colors.green)),
-            children: permissions.map((perm) {
-              final isRisky = _privacyRisks.contains(perm);
-              return ListTile(
-                title: Text(perm, style: TextStyle(color: isRisky ? Colors.red : null)),
-                dense: true,
-              );
-            }).toList(),
-          ),
-        );
-      },
+    void onPressed() {
+      print("button");
+    }
+
+
+    return Column(
+      children: [ElevatedButton(onPressed: onPressed, child: Text("Show")),
+        Expanded(
+        child: ListView.builder(
+          itemCount: _appMap.length,
+          itemBuilder: (context, index) {
+            final app = _appMap.values.elementAt(index);
+            final permissions = _permissionsMap[app.packageName] ?? [];
+            final hasRisks = permissions.any((p) => _privacyRisks.contains(p));
+        
+            return Card(
+              margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              elevation: 2.0,
+              color: hasRisks ? Colors.orange[50] : null, // Highlight risky apps
+              child: ExpansionTile(
+                leading: app.icon != null ? Image.memory(app.icon!, width: 40, height: 40) : const Icon(Icons.android, size: 40),
+                title: Text(app.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                subtitle: Text(hasRisks ? 'Potential Privacy Risks' : 'No major risks detected', style: TextStyle(color: hasRisks ? Colors.red : Colors.green)),
+                children: permissions.map((perm) {
+                  final isRisky = _privacyRisks.contains(perm);
+                  return ListTile(
+                    title: Text(perm, style: TextStyle(color: isRisky ? Colors.red : null)),
+                    dense: true,
+                  );
+                }).toList(),
+              ),
+            );
+          },
+        ),
+      )],
     );
   }
 
