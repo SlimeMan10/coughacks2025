@@ -29,7 +29,7 @@ public class DemoAccessibilityService extends AccessibilityService {
                 System.out.println("Opened package: " + packageName);
 
                 if (packageName.equals("com.android.chrome")) {
-                    Intent intent = new Intent(this, SusOverlayActivity.class);
+                    Intent intent = new Intent(this, OverlayActivity.class);
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(intent);
                 }

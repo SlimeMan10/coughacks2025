@@ -19,7 +19,7 @@
 
 
         <activity
-            android:name=".SusOverlayActivity"
+            android:name=".OverlayActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"
             android:excludeFromRecents="true"
             android:taskAffinity=""

@@ -143,7 +143,7 @@ class _PermissionsTabState extends State<PermissionsTab> {
     try {
       // Fetch installed apps
       final List<AppInfo> installedApps = await InstalledApps.getInstalledApps(
-        true,
+        false,
         true,
         "",
       );
