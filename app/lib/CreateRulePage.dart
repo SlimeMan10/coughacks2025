@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:app/Rule.dart';
 import 'package:installed_apps/installed_apps.dart';
 import 'package:installed_apps/app_info.dart';
+import 'package:app/database/ruleDatabase.dart';
 
 class CreateRulePage extends StatefulWidget {
+  final Rule? ruleToEdit; // Optional rule for editing
+
+  CreateRulePage({this.ruleToEdit});
+
   @override
   _CreateRulePageState createState() => _CreateRulePageState();
 }
@@ -24,6 +29,8 @@ class _CreateRulePageState extends State<CreateRulePage> {
     DayOfWeek.Sunday
   ];
   bool _isStrict = false;
+  bool _isEditMode = false;
+  String? _originalRuleName;
   
   // List of installed apps
   List<AppInfo> _installedApps = [];
@@ -43,6 +50,29 @@ class _CreateRulePageState extends State<CreateRulePage> {
   void initState() {
     super.initState();
     _loadInstalledApps();
+    
+    // Set up editing mode if a rule is provided
+    if (widget.ruleToEdit != null) {
+      _initializeEditMode();
+    }
+  }
+  
+  void _initializeEditMode() {
+    final rule = widget.ruleToEdit!;
+    _isEditMode = true;
+    _originalRuleName = rule.name;
+    
+    _nameController.text = rule.name;
+    _selectedApps = List.from(rule.blockedApps);
+    _isAllDay = rule.isAllDay;
+    
+    if (!rule.isAllDay && rule.startTime != null && rule.endTime != null) {
+      _startTime = rule.startTime!;
+      _endTime = rule.endTime!;
+    }
+    
+    _selectedDays = List.from(rule.applicableDays);
+    _isStrict = rule.isStrict;
   }
 
   // Modified to show ALL installed apps WITH icons
@@ -117,6 +147,45 @@ class _CreateRulePageState extends State<CreateRulePage> {
             borderRadius: BorderRadius.circular(2.5),
           ),
         ),
+        actions: [
+          if (_isEditMode)
+            IconButton(
+              icon: Icon(Icons.delete_outline, color: Colors.red),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text('Delete Rule'),
+                      content: Text('Are you sure you want to delete "${_nameController.text}"?'),
+                      actions: <Widget>[
+                        TextButton(
+                          child: Text('CANCEL'),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                        TextButton(
+                          child: Text(
+                            'DELETE',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                          onPressed: () async {
+                            if (_originalRuleName != null) {
+                              final ruleStorage = RuleStorage();
+                              await ruleStorage.deleteRule(_originalRuleName!);
+                              Navigator.of(context).pop(); // Close dialog
+                              Navigator.of(context).pop(); // Return to rules page
+                            }
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -124,6 +193,19 @@ class _CreateRulePageState extends State<CreateRulePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Title
+              Padding(
+                padding: EdgeInsets.only(left: 4, bottom: 16),
+                child: Text(
+                  _isEditMode ? 'Edit Rule' : 'Create New Rule',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+              
               // Session name input
               Container(
                 padding: EdgeInsets.all(16),
@@ -154,38 +236,6 @@ class _CreateRulePageState extends State<CreateRulePage> {
                       ),
                     ),
                     Icon(Icons.edit, color: Colors.grey.shade400),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 32),
-
-              // Help text
-              Container(
-                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.blue),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Need help setting up your rule? Tap here.',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.close, color: Colors.blue),
-                      onPressed: () {},
-                      constraints: BoxConstraints.tightFor(width: 24, height: 24),
-                      padding: EdgeInsets.zero,
-                    )
                   ],
                 ),
               ),
@@ -398,6 +448,8 @@ class _CreateRulePageState extends State<CreateRulePage> {
                                   });
                                 },
                                 activeColor: Colors.black,
+                                inactiveTrackColor: Colors.grey.shade300,
+                                inactiveThumbColor: Colors.white,
                               ),
                               SizedBox(width: 8),
                               Text(
@@ -416,6 +468,8 @@ class _CreateRulePageState extends State<CreateRulePage> {
                                   });
                                 },
                                 activeColor: Colors.black,
+                                inactiveTrackColor: Colors.grey.shade300,
+                                inactiveThumbColor: Colors.white,
                               ),
                               SizedBox(width: 8),
                               Text(
@@ -546,7 +600,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
               ElevatedButton(
                 onPressed: _createRule,
                 child: Text(
-                  'Schedule',
+                  _isEditMode ? 'Update' : 'Schedule',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -564,20 +618,21 @@ class _CreateRulePageState extends State<CreateRulePage> {
 
               SizedBox(height: 16),
 
-              // Add to templates button
-              Center(
-                child: TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    'Add to templates',
-                    style: TextStyle(
-                      color: Colors.blue,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 16,
+              // Add to templates button - only show in create mode
+              if (!_isEditMode)
+                Center(
+                  child: TextButton(
+                    onPressed: () {},
+                    child: Text(
+                      'Add to templates',
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -1173,7 +1228,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
     // Enhanced debug prints with very clear formatting
     print("\n");
     print("=====================================================");
-    print("                  NEW RULE CREATED                  ");
+    print("                  RULE ${_isEditMode ? 'UPDATED' : 'CREATED'}                  ");
     print("=====================================================");
     print("Rule Name: ${newRule.name}");
     print("-----------------------------------------------------");
@@ -1203,6 +1258,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
     print("Strict mode: ${newRule.isStrict ? 'YES' : 'NO'}");
     print("=====================================================\n");
 
+    // Return the rule to the previous screen
     Navigator.pop(context, newRule);
   }
 

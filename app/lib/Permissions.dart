@@ -4,6 +4,7 @@ import 'package:installed_apps/installed_apps.dart';
 import 'package:installed_apps/app_info.dart';
 import 'package:flutter/services.dart';
 import 'package:swipe_cards/swipe_cards.dart';
+import 'package:app/services/permissions_data_service.dart';
 
 const platform = MethodChannel('com.hugh.coughacks/permissions');
 
@@ -27,14 +28,21 @@ class PermissionsTab extends StatefulWidget {
   _PermissionsTabState createState() => _PermissionsTabState();
 }
 
-class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAliveClientMixin {
+class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
+  // Use the PermissionsDataService
+  final PermissionsDataService _dataService = PermissionsDataService();
+  
   Map<String, List<AppInfo>> permissionsToApps = {};
   Map<String, List<String>> appToPermissions = {};
   List<Map<String, dynamic>> permissionCards = [];
   List<SwipeItem> swipeItems = [];
   MatchEngine? matchEngine;
-  bool _isLoading = false;
+  bool _isLoading = true;
   bool _isReviewing = false; // To toggle between overview and card view
+  
+  // Animation controllers
+  late AnimationController _pageTransitionController;
+  late Animation<double> _pageTransitionAnimation;
 
   static const List<String> dangerousPermissions = [
     "android.permission.READ_CONTACTS",
@@ -137,84 +145,160 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
   @override
   void initState() {
     super.initState();
-    _loadPermissionsData();
+    
+    // Initialize animation controllers
+    _pageTransitionController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    
+    _pageTransitionAnimation = CurvedAnimation(
+      parent: _pageTransitionController,
+      curve: Curves.easeInOut,
+    );
+    
+    // Set up listeners for the data service
+    _dataService.addLoadingListener((isLoading) {
+      if (mounted) {
+        setState(() {
+          _isLoading = isLoading;
+        });
+      }
+    });
+    
+    _dataService.addDataLoadedListener(() {
+      if (mounted) {
+        _prepareUIFromCachedData();
+      }
+    });
+    
+    _dataService.addErrorListener((error) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        _showErrorSnackBar(error);
+      }
+    });
+    
+    // Check if data is already loaded or start loading
+    if (_dataService.isLoaded) {
+      _prepareUIFromCachedData();
+    } else {
+      _loadPermissionsData();
+    }
+  }
+  
+  @override
+  void dispose() {
+    _pageTransitionController.dispose();
+    
+    // Clean up listeners
+    _dataService.removeLoadingListener((isLoading) {
+      if (mounted) {
+        setState(() {
+          _isLoading = isLoading;
+        });
+      }
+    });
+    
+    _dataService.removeDataLoadedListener(() {
+      if (mounted) {
+        _prepareUIFromCachedData();
+      }
+    });
+    
+    _dataService.removeErrorListener((error) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        _showErrorSnackBar(error);
+      }
+    });
+    
+    super.dispose();
   }
 
-  Future<void> _loadPermissionsData() async {
-    if (_isLoading) return;
-    setState(() => _isLoading = true);
-
-    try {
-      final List<AppInfo> installedApps = await InstalledApps.getInstalledApps(false, true, "");
-      final Map<String, List<AppInfo>> tempPermissionsToApps = {};
-      final Map<String, List<String>> tempAppToPermissions = {};
-
-      for (var app in installedApps) {
-        final permissions = await getAppPermissions(app.packageName);
-        final dangerous = permissions.where((p) => dangerousPermissions.contains(p)).toList();
-        if (dangerous.isNotEmpty) {
-          tempAppToPermissions[app.packageName] = dangerous;
-          for (var permission in dangerous) {
-            tempPermissionsToApps.putIfAbsent(permission, () => []).add(app);
-          }
-        }
-      }
-
-      // Build the list of app-permission pairs
-      permissionCards = [];
-      for (var permission in dangerousPermissions) {
-        List<AppInfo> apps = tempPermissionsToApps[permission] ?? [];
-        for (var app in apps) {
-          permissionCards.add({
-            'app': app,
-            'permission': permission,
-          });
-        }
-      }
-      permissionCards.shuffle();
-
-      // Create swipe items
-      swipeItems = permissionCards.map((card) {
-        AppInfo app = card['app'];
-        String permission = card['permission'];
-        return SwipeItem(
-          content: _buildCardContent(app, permission),
-          likeAction: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text("Accepted ${app.name} - ${permissionNames[permission]}"),
-                backgroundColor: Colors.green,
-              ),
-            );
-          },
-          nopeAction: () {
-            InstalledApps.openSettings(app.packageName);
-          },
-        );
-      }).toList();
-
-      matchEngine = MatchEngine(swipeItems: swipeItems);
-
+  // Prepare UI data from the cached service data
+  void _prepareUIFromCachedData() {
+    // Get data from service
+    permissionsToApps = _dataService.permissionsToApps;
+    appToPermissions = _dataService.appToPermissions;
+    permissionCards = _dataService.permissionCards;
+    
+    // Create swipe items
+    _createSwipeItems();
+    
+    // Update UI
+    if (mounted) {
       setState(() {
-        permissionsToApps = tempPermissionsToApps;
-        appToPermissions = tempAppToPermissions;
         _isLoading = false;
       });
-    } catch (e) {
-      print("Error fetching data: $e");
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text("Failed to load permissions data"),
-            backgroundColor: Colors.redAccent,
-            action: SnackBarAction(
-              label: 'Retry',
-              onPressed: _loadPermissionsData,
+    }
+  }
+  
+  // Create SwipeItems from permissionCards
+  void _createSwipeItems() {
+    swipeItems = permissionCards.map((card) {
+      AppInfo app = card['app'];
+      String permission = card['permission'];
+      return SwipeItem(
+        content: _buildCardContent(app, permission),
+        likeAction: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Accepted ${app.name} - ${permissionNames[permission]}"),
+              backgroundColor: Colors.green,
             ),
-          ),
-        );
-      }
+          );
+        },
+        nopeAction: () {
+          InstalledApps.openSettings(app.packageName);
+        },
+      );
+    }).toList();
+
+    matchEngine = MatchEngine(swipeItems: swipeItems);
+  }
+  
+  // Show error snackbar
+  void _showErrorSnackBar(String error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Failed to load permissions data"),
+        backgroundColor: Colors.redAccent,
+        action: SnackBarAction(
+          label: 'Retry',
+          onPressed: _loadPermissionsData,
+        ),
+      ),
+    );
+  }
+  
+  // Load permissions data through the service
+  Future<void> _loadPermissionsData() async {
+    setState(() => _isLoading = true);
+    
+    // Use the data service to load or refresh the data
+    if (_dataService.isLoaded) {
+      await _dataService.refreshData();
+    } else {
+      await _dataService.preloadData();
+    }
+    
+    // No need to update state here as it's handled by listeners
+  }
+
+  // Toggle review mode with animation
+  void _toggleReviewMode(bool value) {
+    if (value) {
+      setState(() => _isReviewing = true);
+      _pageTransitionController.forward();
+    } else {
+      _pageTransitionController.reverse().then((_) {
+        setState(() => _isReviewing = false);
+      });
     }
   }
 
@@ -361,107 +445,188 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
     );
   }
 
+  // Large review button
+  Widget _buildReviewButton() {
+    return GestureDetector(
+      onTap: () => _toggleReviewMode(true),
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.shield_outlined,
+              color: Colors.white,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              "Review Permissions",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
+    
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Review Permissions',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          _isReviewing 
-            ? IconButton(
-                icon: const Icon(Icons.close, color: Colors.black),
-                onPressed: () {
-                  setState(() => _isReviewing = false);
-                },
-              )
-            : IconButton(
-                icon: const Icon(Icons.filter_list, color: Colors.black),
-                onPressed: () {
-                  setState(() => _isReviewing = true);
+      appBar: _isReviewing 
+          ? AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              leading: AnimatedBuilder(
+                animation: _pageTransitionAnimation,
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: _pageTransitionAnimation.value,
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.black),
+                      onPressed: () => _toggleReviewMode(false),
+                    ),
+                  );
                 },
               ),
-        ],
-      ),
+              title: AnimatedBuilder(
+                animation: _pageTransitionAnimation,
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: _pageTransitionAnimation.value,
+                    child: const Text(
+                      'Review Permissions',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            )
+          : AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              title: const Text(
+                'Permissions',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.refresh, color: Colors.black),
+                  onPressed: _loadPermissionsData,
+                ),
+              ],
+            ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.black))
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          : Stack(
               children: [
-                // Header section
-                Padding(
-                  padding: const EdgeInsets.only(left: 16, top: 8, bottom: 16),
-                  child: Row(
+                // Overview content
+                AnimatedBuilder(
+                  animation: _pageTransitionAnimation,
+                  builder: (context, child) {
+                    return Opacity(
+                      opacity: 1 - _pageTransitionAnimation.value,
+                      child: IgnorePointer(
+                        ignoring: _isReviewing,
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.expand_more, color: Colors.grey),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Permission overview',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
+                      // Review button at the top
+                      _buildReviewButton(),
+                      
+                      // Stats row
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            _buildStatBadge(
+                              count: _dataService.dangerousPermissionsList.length,
+                              label: "permissions tracked",
+                              icon: Icons.shield_outlined,
+                            ),
+                            const SizedBox(width: 12),
+                            _buildStatBadge(
+                              count: appToPermissions.length,
+                              label: "apps with permissions",
+                              icon: Icons.apps,
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                
-                // Stats row
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      _buildStatBadge(
-                        count: dangerousPermissions.length,
-                        label: "permissions tracked",
-                        icon: Icons.shield_outlined,
-                      ),
-                      const SizedBox(width: 12),
-                      _buildStatBadge(
-                        count: appToPermissions.length,
-                        label: "apps with permissions",
-                        icon: Icons.apps,
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Main content
-                Expanded(
-                  child: _isReviewing
-                      ? (swipeItems.isEmpty
-                          ? _buildEmptyState()
-                          : SwipeCards(
-                              matchEngine: matchEngine!,
-                              itemBuilder: (context, index) => swipeItems[index].content,
-                              onStackFinished: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text("All permissions reviewed!"),
-                                    backgroundColor: Colors.black,
-                                  ),
-                                );
-                                setState(() => _isReviewing = false);
-                              },
-                            ))
-                      : ListView.builder(
-                          itemCount: dangerousPermissions.length,
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Permission list
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: _dataService.dangerousPermissionsList.length,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemBuilder: (context, index) => _buildPermissionSection(dangerousPermissions[index]),
+                          itemBuilder: (context, index) => _buildPermissionSection(_dataService.dangerousPermissionsList[index]),
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Review cards content
+                AnimatedBuilder(
+                  animation: _pageTransitionAnimation,
+                  builder: (context, child) {
+                    return Opacity(
+                      opacity: _pageTransitionAnimation.value,
+                      child: IgnorePointer(
+                        ignoring: !_isReviewing,
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: swipeItems.isEmpty
+                    ? _buildEmptyState()
+                    : SwipeCards(
+                        matchEngine: matchEngine!,
+                        itemBuilder: (context, index) => swipeItems[index].content,
+                        onStackFinished: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("All permissions reviewed!"),
+                              backgroundColor: Colors.black,
+                            ),
+                          );
+                          _toggleReviewMode(false);
+                        },
+                      ),
                 ),
               ],
             ),
@@ -548,9 +713,7 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
           ),
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: () {
-              setState(() => _isReviewing = false);
-            },
+            onPressed: () => _toggleReviewMode(false),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.black,
               foregroundColor: Colors.white,
@@ -671,9 +834,7 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
         ),
         const SizedBox(height: 12),
         ElevatedButton(
-          onPressed: () {
-            setState(() => _isReviewing = true);
-          },
+          onPressed: () => _toggleReviewMode(true),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.black,
             foregroundColor: Colors.white,

@@ -15,9 +15,13 @@ import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.Result;
 
+import java.util.Map;
+import java.util.HashMap;
+
 public class DemoAccessibilityService extends AccessibilityService {
     private static final String TAG = "DemoAccessService";
     private static final String RULE_CHANNEL = "com.hugh.coughacks/rule_check";
+    private static final String EXTRA_RULE_NAME = "rule_name";
     private Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Override
@@ -65,13 +69,33 @@ public class DemoAccessibilityService extends AccessibilityService {
             channel.invokeMethod("checkAppAgainstRules", packageName, new Result() {
                 @Override
                 public void success(Object result) {
-                    if (result instanceof Boolean) {
-                        boolean shouldBlock = (Boolean) result;
-                        Log.d(TAG, "📱 Flutter responded: App " + packageName + " should " + (shouldBlock ? "be blocked ❌" : "not be blocked ✅"));
+                    if (result instanceof Map) {
+                        // Parse result as Map
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> resultMap = (Map<String, Object>) result;
+                        boolean shouldBlock = (Boolean) resultMap.get("blocked");
+                        String ruleName = (String) resultMap.get("ruleName");
+                        
+                        Log.d(TAG, "📱 Flutter responded: App " + packageName + " should " + 
+                            (shouldBlock ? "be blocked ❌ by rule " + ruleName : "not be blocked ✅"));
                         
                         if (shouldBlock) {
                             Log.d(TAG, "🚫 Launching overlay to block: " + packageName);
-                            showBlockOverlay();
+                            showBlockOverlay(ruleName);
+                        }
+                        
+                        Toast.makeText(getApplicationContext(),
+                            "App: " + packageName + (shouldBlock ? " (BLOCKED by Flutter)" : " (Allowed)"),
+                            Toast.LENGTH_SHORT).show();
+                    } else if (result instanceof Boolean) {
+                        // For backward compatibility with older implementation
+                        boolean shouldBlock = (Boolean) result;
+                        Log.d(TAG, "📱 Flutter responded (legacy format): App " + packageName + 
+                            " should " + (shouldBlock ? "be blocked ❌" : "not be blocked ✅"));
+                        
+                        if (shouldBlock) {
+                            Log.d(TAG, "🚫 Launching overlay to block: " + packageName);
+                            showBlockOverlay(null);
                         }
                         
                         Toast.makeText(getApplicationContext(),
@@ -104,7 +128,7 @@ public class DemoAccessibilityService extends AccessibilityService {
         
         if (shouldBlock) {
             Log.d(TAG, "🚫 Launching overlay to block app: " + packageName);
-            showBlockOverlay();
+            showBlockOverlay("System Rule"); // Default rule name for native blocking
         }
         
         Toast.makeText(getApplicationContext(),
@@ -112,11 +136,14 @@ public class DemoAccessibilityService extends AccessibilityService {
             Toast.LENGTH_SHORT).show();
     }
     
-    private void showBlockOverlay() {
+    private void showBlockOverlay(String ruleName) {
         Intent intent = new Intent(this, OverlayActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (ruleName != null) {
+            intent.putExtra(EXTRA_RULE_NAME, ruleName);
+        }
         startActivity(intent);
-        Log.d(TAG, "⚡ Overlay activity started");
+        Log.d(TAG, "⚡ Overlay activity started" + (ruleName != null ? " with rule: " + ruleName : ""));
     }
 
     @Override

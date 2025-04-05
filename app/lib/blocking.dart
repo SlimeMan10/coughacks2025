@@ -10,7 +10,7 @@ class Blocking extends StatefulWidget {
   _BlockingState createState() => _BlockingState();
 }
 
-class _BlockingState extends State<Blocking> {
+class _BlockingState extends State<Blocking> with WidgetsBindingObserver {
   bool? _isAccessibilityEnabled;
   bool? _hasOverlayPermission;
   bool _isLoading = true;
@@ -19,7 +19,14 @@ class _BlockingState extends State<Blocking> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _checkPermissions(); // Initial check
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   Future<void> _checkPermissions() async {
@@ -95,10 +102,53 @@ class _BlockingState extends State<Blocking> {
     }
 
     if (changed) {
-      await Future.delayed(const Duration(milliseconds: 600));
+      // Schedule a permission check shortly after returning from settings
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkPermissionsWithRetry();
+      });
+    } else {
+      await _checkPermissions();
     }
+  }
 
+  // New method to check permissions with retries
+  Future<void> _checkPermissionsWithRetry() async {
+    // First immediate check
     await _checkPermissions();
+    
+    // If not all permissions are granted, set up periodic checks
+    if (!(_isAccessibilityEnabled == true && _hasOverlayPermission == true)) {
+      // Check permissions again after 1 second
+      Future.delayed(const Duration(milliseconds: 800), () async {
+        if (!mounted) return;
+        await _checkPermissions();
+        
+        // If still not granted, check one more time after a shorter delay
+        if (!(_isAccessibilityEnabled == true && _hasOverlayPermission == true)) {
+          Future.delayed(const Duration(milliseconds: 800), () async {
+            if (!mounted) return;
+            await _checkPermissions();
+            
+            // One final check after another delay if needed
+            if (!(_isAccessibilityEnabled == true && _hasOverlayPermission == true)) {
+              Future.delayed(const Duration(milliseconds: 800), () {
+                if (!mounted) return;
+                _checkPermissions();
+              });
+            }
+          });
+        }
+      });
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // When app resumes from background (likely returning from settings)
+    if (state == AppLifecycleState.resumed) {
+      _checkPermissionsWithRetry();
+    }
+    super.didChangeAppLifecycleState(state);
   }
 
   @override

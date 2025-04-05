@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'database/ruleDatabase.dart';
 
 enum DayOfWeek {
   Monday,
@@ -151,10 +152,12 @@ class Rule {
   }
 }
 
-
-bool isAppBlocked(String app) {
+// Utility function to check if an app is blocked based on the current rules
+Future<bool> isAppBlocked(String app) async {
   final currentTime = Rule.getCurrentTimeOfDay();
   final currentDay = Rule.getCurrentDayOfWeek();
+  final ruleStorage = RuleStorage();
+  final rules = await ruleStorage.getRules();
 
   String timeToString(TimeOfDay time) {
     return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
@@ -162,7 +165,7 @@ bool isAppBlocked(String app) {
 
   print("Checking if app '$app' is blocked at ${timeToString(currentTime)} on $currentDay");
 
-  for (final rule in dummyRules) {
+  for (final rule in rules) {
     if (rule.isActiveNow()) {
       print("Rule '${rule.name}' is active now.");
 
@@ -180,114 +183,3 @@ bool isAppBlocked(String app) {
   print("App '$app' is not currently blocked.");
   return false;
 }
-
-
-
-
-
-// List of dummy rules for testing
-List<Rule> dummyRules = [
-  Rule(
-    name: "Work Hours",
-    blockedApps: ["Instagram", "TikTok", "Facebook", "Twitter", "YouTube"],
-    isAllDay: false,
-    startTime: const TimeOfDay(hour: 9, minute: 0),
-    endTime: const TimeOfDay(hour: 17, minute: 0),
-    applicableDays: [
-      DayOfWeek.Monday,
-      DayOfWeek.Tuesday,
-      DayOfWeek.Wednesday,
-      DayOfWeek.Thursday,
-      DayOfWeek.Friday
-    ],
-    isStrict: true,
-  ),
-  
-  Rule(
-    name: "Study Time",
-    blockedApps: ["Instagram", "TikTok", "Netflix", "Spotify", "Discord"],
-    isAllDay: false,
-    startTime: const TimeOfDay(hour: 18, minute: 0),
-    endTime: const TimeOfDay(hour: 20, minute: 0),
-    applicableDays: [
-      DayOfWeek.Monday,
-      DayOfWeek.Tuesday,
-      DayOfWeek.Wednesday,
-      DayOfWeek.Thursday,
-      DayOfWeek.Sunday
-    ],
-    isStrict: false,
-  ),
-  
-  Rule(
-    name: "Digital Detox",
-    blockedApps: [
-      "Instagram", 
-      "TikTok", 
-      "Facebook", 
-      "Twitter", 
-      "YouTube", 
-      "gmail", 
-      "Reddit"
-    ],
-    isAllDay: true,
-    applicableDays: [DayOfWeek.Saturday],
-    isStrict: true,
-  ),
-
-  Rule(
-    name: "Digital Detox 2",
-    blockedApps: [
-      "com.android.chrome", 
-      "com.google.android.youtube"
-    ],
-    isAllDay: true,
-    applicableDays: [
-      DayOfWeek.Monday,
-      DayOfWeek.Tuesday,
-      DayOfWeek.Wednesday,
-      DayOfWeek.Thursday,
-      DayOfWeek.Friday,
-      DayOfWeek.Saturday,
-      DayOfWeek.Sunday
-    ],
-    isStrict: true,
-  ),
-
-  Rule(
-    name: "Digital Detox 2",
-    blockedApps: [
-      "com.android.chrome", 
-      "com.google.android.youtube"
-    ],
-    isAllDay: true,
-    applicableDays: [
-      DayOfWeek.Monday,
-      DayOfWeek.Tuesday,
-      DayOfWeek.Wednesday,
-      DayOfWeek.Thursday,
-      DayOfWeek.Friday,
-      DayOfWeek.Saturday,
-      DayOfWeek.Sunday
-    ],
-    isStrict: true,
-  ),
-  
-  Rule(
-    name: "Sleep Mode",
-    blockedApps: ["All"],
-    isAllDay: false,
-    startTime: const TimeOfDay(hour: 23, minute: 0),
-    endTime: const TimeOfDay(hour: 7, minute: 0),
-    applicableDays: [
-      DayOfWeek.Monday,
-      DayOfWeek.Tuesday,
-      DayOfWeek.Wednesday,
-      DayOfWeek.Thursday,
-      DayOfWeek.Friday,
-      DayOfWeek.Saturday,
-      DayOfWeek.Sunday
-    ],
-    isStrict: true,
-  ),
-];

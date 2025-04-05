@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 // import 'tabs.dart';
 import 'native_rule_bridge.dart';
 import 'splash_screen.dart'; // Import the new splash screen file
+import 'services/permissions_data_service.dart'; // Import the permissions data service
 
 void main() {
   // Ensure Flutter binding is initialized
@@ -11,6 +12,10 @@ void main() {
   // Initialize the NativeRuleBridge to handle method calls from native
   print('📱 THIS IS IN DART: Initializing NativeRuleBridge in main.dart');
   NativeRuleBridge.initialize();
+  
+  // Start preloading permissions data in the background
+  print('🔄 THIS IS IN DART: Starting permissions data preloading');
+  PermissionsDataService().preloadData();
 
   // Run the app, starting with the MaterialApp wrapping the SplashScreen
   runApp(MyApp());

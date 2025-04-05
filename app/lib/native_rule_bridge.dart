@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'Rule.dart';
+import 'database/ruleDatabase.dart';
 
 class NativeRuleBridge {
   static const MethodChannel _channel = MethodChannel('com.hugh.coughacks/rule_check');
   static bool _initialized = false;
+  static final RuleStorage _ruleStorage = RuleStorage();
 
   // Initialize the bridge to handle incoming calls from native
   static void initialize() {
@@ -23,9 +25,9 @@ class NativeRuleBridge {
       case 'checkAppAgainstRules':
         final String packageName = call.arguments;
         print('🔍 THIS IS IN DART: Checking app against rules: $packageName');
-        final isBlocked = _checkAppAgainstRules(packageName);
-        print('📊 THIS IS IN DART: App $packageName is ${isBlocked ? "BLOCKED" : "ALLOWED"} by rules');
-        return isBlocked;
+        final result = await _checkAppAgainstRules(packageName);
+        print('📊 THIS IS IN DART: App $packageName is ${result['blocked'] ? "BLOCKED" : "ALLOWED"} by rules');
+        return result;
       default:
         print('⚠️ THIS IS IN DART: Unknown method call from native: ${call.method}');
         throw PlatformException(
@@ -36,9 +38,11 @@ class NativeRuleBridge {
   }
 
   // Internal method to check app against rules
-  static bool _checkAppAgainstRules(String packageName) {
+  static Future<Map<String, dynamic>> _checkAppAgainstRules(String packageName) async {
     print('🧮 THIS IS IN DART: Evaluating rules for app: $packageName');
-    for (final rule in dummyRules) {
+    final rules = await _ruleStorage.getRules();
+    
+    for (final rule in rules) {
       final bool isActive = rule.isActiveNow();
       var containsApp = rule.blockedApps.contains(packageName);
       if (isActive) {
@@ -57,12 +61,18 @@ class NativeRuleBridge {
       
       if (isActive && containsApp) {
         print('🚫 THIS IS IN DART: App $packageName should be blocked by rule "${rule.name}"');
-        return true;
+        return {
+          'blocked': true,
+          'ruleName': rule.name,
+        };
       }
     }
     
     print('✅ THIS IS IN DART: No active rules block app: $packageName');
-    return false;
+    return {
+      'blocked': false,
+      'ruleName': '',
+    };
   }
 
   // Check if an app is currently blocked (called from Flutter code)
@@ -80,12 +90,16 @@ class NativeRuleBridge {
 }
 
 // Example: Checking if an app should be blocked based on rules
-void checkAndBlockApp(String packageName) async {
+Future<void> checkAndBlockApp(String packageName) async {
   print('📋 THIS IS IN DART: Checking rules for app: $packageName');
   // First check Flutter rules
+  final ruleStorage = RuleStorage();
+  final rules = await ruleStorage.getRules();
+  
+  String blockingRuleName = '';
   bool shouldBlock = false;
   
-  for (final rule in dummyRules) {
+  for (final rule in rules) {
     final bool isActive = rule.isActiveNow();
     final bool containsApp = rule.blockedApps.contains(packageName);
     
@@ -94,6 +108,7 @@ void checkAndBlockApp(String packageName) async {
     if (isActive && containsApp) {
       print('🚫 THIS IS IN DART: App $packageName should be blocked by rule "${rule.name}"');
       shouldBlock = true;
+      blockingRuleName = rule.name;
       break;
     }
   }

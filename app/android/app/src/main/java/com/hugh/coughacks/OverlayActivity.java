@@ -11,10 +11,15 @@ import android.view.ViewGroup;
 import android.graphics.Typeface;
 
 public class OverlayActivity extends Activity {
+    private static final String EXTRA_RULE_NAME = "rule_name";
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Get rule name from intent
+        String ruleName = getIntent().getStringExtra(EXTRA_RULE_NAME);
+        
         // Root layout (fullscreen overlay)
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
@@ -32,8 +37,21 @@ public class OverlayActivity extends Activity {
         title.setTextSize(24);
         title.setTypeface(null, Typeface.BOLD);
         title.setGravity(Gravity.CENTER);
-        title.setPadding(0, 0, 0, 60);
+        title.setPadding(0, 0, 0, 20);
         layout.addView(title);
+        
+        // Rule name subtitle (if available)
+        if (ruleName != null && !ruleName.isEmpty()) {
+            TextView ruleText = new TextView(this);
+            ruleText.setText("Blocked by: " + ruleName);
+            ruleText.setTextColor(Color.WHITE);
+            ruleText.setTextSize(16);
+            ruleText.setGravity(Gravity.CENTER);
+            ruleText.setPadding(0, 0, 0, 60);
+            layout.addView(ruleText);
+        } else {
+            title.setPadding(0, 0, 0, 60); // Add more padding if no rule name
+        }
 
         // Motivational Quote
         TextView quote = new TextView(this);
