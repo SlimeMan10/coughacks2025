@@ -39,6 +39,7 @@ dependencies:
   installed_apps: ^1.6.0
   permission_handler: ^11.3.1  # Add this
   shared_preferences: ^2.2.2
+  percent_indicator: ^4.2.3
 # Add this to get app icons
 
 dev_dependencies:
