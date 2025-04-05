@@ -1,5 +1,5 @@
 import 'package:app/Permissions.dart';
-import 'package:app/RandomStory.dart';
+import 'package:app/LocalLeaderboard.dart';
 import 'package:app/blocking.dart';
 import 'package:flutter/material.dart';
 import 'AppUsage.dart';
@@ -55,7 +55,7 @@ class _TabsState extends State<Tabs> with SingleTickerProviderStateMixin {
             PermissionsTab(),
             Blocking(),
             BlockInfo(title: 'Block Info Placeholder'),
-            RandomStory(),
+            LocalLeaderboard(),
           ],
         ),
         bottomNavigationBar: Container(

@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
+import 'shareScreenshot.dart';
 
 void main() {
   runApp(
@@ -35,6 +35,13 @@ class AppUsageAppState extends State<AppUsageApp>
 
   RangeValues _dateRange = const RangeValues(6, 7);
   final ScreenshotController _screenshotController = ScreenshotController();
+  
+  void _shareScreenshot() {
+    ShareScreenshot(
+      context: context,
+      screenshotController: _screenshotController,
+    ).captureAndShare();
+  }
 
   @override
   bool get wantKeepAlive => true;
@@ -44,6 +51,7 @@ class AppUsageAppState extends State<AppUsageApp>
     super.initState();
     _updateDateRange(_dateRange);
   }
+
 
   void _updateDateRange(RangeValues range) {
     final now = DateTime.now();
@@ -158,25 +166,6 @@ class AppUsageAppState extends State<AppUsageApp>
       breakdown[category] = (breakdown[category] ?? Duration.zero) + info.usage;
     }
     return breakdown;
-  }
-
-  Future<void> _shareScreenshot() async {
-    try {
-      final image = await _screenshotController.capture();
-      if (image == null) return;
-
-      final directory = await getTemporaryDirectory();
-      final imagePath = await File('${directory.path}/screentime.png').create();
-      await imagePath.writeAsBytes(image);
-
-      await Share.shareXFiles([
-        XFile(imagePath.path),
-      ], text: 'Check out my screen time!');
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to share screenshot: $e')));
-    }
   }
 
   @override
@@ -329,6 +318,7 @@ class AppUsageAppState extends State<AppUsageApp>
             ),
           ],
         ),
+        
         floatingActionButton: FloatingActionButton(
           backgroundColor: Colors.white12,
           foregroundColor: Colors.white,
