@@ -10,6 +10,9 @@ import android.os.Build;
 import android.widget.Toast;
 import android.content.Intent;
 import android.util.Log;
+import android.content.pm.PackageManager;
+import java.util.ArrayList;
+import java.util.List;
 
 import androidx.annotation.NonNull;
 
@@ -22,6 +25,7 @@ import io.flutter.plugin.common.MethodChannel;
 public class MainActivity extends FlutterActivity {
   private static final String CHANNEL = "com.hugh/accessibility";
   private static final String RULE_CHANNEL = "com.hugh.coughacks/rule_check";
+  private static final String PERMISSIONS_CHANNEL = "com.hugh.coughacks/permissions";
   private static final String TAG = "MainActivity";
 
   private void requestOverlayPermission() {
@@ -98,6 +102,45 @@ public class MainActivity extends FlutterActivity {
                 result.notImplemented();
             }
         });
+        
+    // Add permissions method channel
+    new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), PERMISSIONS_CHANNEL)
+        .setMethodCallHandler((call, result) -> {
+            if (call.method.equals("getPermissions")) {
+                String packageName = call.argument("packageName");
+                if (packageName != null) {
+                    Log.d(TAG, "🔍 Querying permissions for: " + packageName);
+                    List<String> permissions = getPermissions(packageName);
+                    Log.d(TAG, "✅ Found " + permissions.size() + " permissions for " + packageName);
+                    result.success(permissions);
+                } else {
+                    Log.d(TAG, "❌ Error: Package name is null");
+                    result.error("INVALID_ARGUMENT", "Package name is null", null);
+                }
+            } else {
+                result.notImplemented();
+            }
+        });
+  }
+
+  private List<String> getPermissions(String packageName) {
+    try {
+        PackageManager pm = getPackageManager();
+        android.content.pm.PackageInfo packageInfo = pm.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS);
+        String[] requestedPermissions = packageInfo.requestedPermissions;
+        
+        List<String> permissions = new ArrayList<>();
+        if (requestedPermissions != null) {
+            for (String permission : requestedPermissions) {
+                permissions.add(permission);
+            }
+        }
+        
+        return permissions;
+    } catch (Exception e) {
+        Log.e(TAG, "❌ Error getting permissions for " + packageName + ": " + e.getMessage());
+        return new ArrayList<>();
+    }
   }
 
   public static boolean isAccessibilityServiceEnabled(Context context, Class<?> service) {

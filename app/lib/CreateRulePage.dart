@@ -29,6 +29,15 @@ class _CreateRulePageState extends State<CreateRulePage> {
   List<AppInfo> _installedApps = [];
   bool _isLoadingApps = true;
   String? _appLoadError;
+  
+  // Map to maintain information about hardcoded important apps
+  // This allows us to reference these even if they aren't found in scan
+  final Map<String, String> _importantApps = {
+    'com.google.android.youtube': 'YouTube',
+    'com.google.android.gm': 'Gmail',
+    'com.google.android.googlequicksearchbox': 'Google',
+    'com.android.chrome': 'Chrome'
+  };
 
   @override
   void initState() {
@@ -36,7 +45,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
     _loadInstalledApps();
   }
 
-  // Modified to show ALL installed apps without any filtering
+  // Modified to show ALL installed apps WITH icons
   Future<void> _loadInstalledApps() async {
     try {
       if (_installedApps.isNotEmpty) {
@@ -53,32 +62,32 @@ class _CreateRulePageState extends State<CreateRulePage> {
         _appLoadError = null;
       });
       
-      print("Fetching ALL installed apps, including system apps...");
+      print("Fetching ALL installed apps with icons...");
       
-      // Force includeSystemApps=true to get ALL apps on the device
+      // Using the method from installed_apps package
+      // Set withIcon to TRUE to load app icons
       List<AppInfo> apps = await InstalledApps.getInstalledApps(
-        true, // INCLUDE system apps
-        true, // include app icons
-        "",   // no filter
+        true, // include system apps - we want ALL apps
+        true, // include app icons for display
+        "", // no filter
       ).timeout(
-        Duration(seconds: 8),
+        Duration(seconds: 8), // increased timeout for icon loading
         onTimeout: () {
           throw Exception("Timed out while loading apps. Please try again.");
         },
       );
       
-      print("Fetched ${apps.length} total apps from device");
+      print("Successfully fetched ${apps.length} apps from device");
       
-      // Sort apps alphabetically by name
+      // Sort by name for better usability
       apps.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
       
-      // No filtering of apps - show everything
       setState(() {
         _installedApps = apps;
         _isLoadingApps = false;
       });
       
-      print("Successfully loaded ${apps.length} apps for selection");
+      print("App list ready with ${apps.length} total apps");
     } catch (e) {
       setState(() {
         _isLoadingApps = false;
@@ -279,7 +288,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
                               spacing: 8,
                               runSpacing: 8,
                               children: _selectedApps.map((packageName) {
-                                // Find the app info
+                                // Find app info based on package name
                                 AppInfo? appInfo;
                                 for (var app in _installedApps) {
                                   if (app.packageName == packageName) {
@@ -288,21 +297,38 @@ class _CreateRulePageState extends State<CreateRulePage> {
                                   }
                                 }
                                 
-                                // Use the available app info or fallback to a generic representation
-                                final String appName = appInfo?.name ?? packageName.split('.').last;
-                                final Widget appIcon = (appInfo != null && appInfo.icon != null)
-                                    ? Image.memory(appInfo.icon!, width: 18, height: 18) 
-                                    : Icon(Icons.android, size: 18);
+                                // For important apps, use the predefined name if the app isn't found
+                                String appName = "";
+                                if (appInfo != null) {
+                                  appName = appInfo.name;
+                                } else if (_importantApps.containsKey(packageName)) {
+                                  appName = _importantApps[packageName]!;
+                                } else {
+                                  appName = packageName.split('.').last;
+                                }
                                 
                                 return Chip(
-                                  label: Text(appName),
-                                  avatar: appIcon,
+                                  label: Text(
+                                    appName,
+                                    style: TextStyle(fontSize: 13),
+                                  ),
+                                  avatar: appInfo?.icon != null
+                                      ? Image.memory(
+                                          appInfo!.icon!,
+                                          width: 18,
+                                          height: 18,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Icon(Icons.android, size: 16),
                                   deleteIcon: Icon(Icons.close, size: 16),
                                   onDeleted: () {
                                     setState(() {
                                       _selectedApps.remove(packageName);
+                                      print("Removed from selection: ${appName} ($packageName)");
                                     });
                                   },
+                                  backgroundColor: Colors.grey.shade100,
+                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                                 );
                               }).toList(),
                             ),
@@ -822,7 +848,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
                         ],
                       ),
                     )
-                  else if (filteredApps.isEmpty)
+                  else if (filteredApps.isEmpty && searchController.text.isEmpty)
                     Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -849,61 +875,200 @@ class _CreateRulePageState extends State<CreateRulePage> {
                     )
                   else
                     Expanded(
-                      child: ListView.builder(
-                        itemCount: filteredApps.length,
-                        itemBuilder: (context, index) {
-                          final app = filteredApps[index];
-                          final isSelected = _selectedApps.contains(app.packageName);
+                      child: ListView(
+                        children: [
+                          // Important apps section - always show these first
+                          if (searchController.text.isEmpty) ...[
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Text(
+                                'Popular Apps',
+                                style: TextStyle(
+                                  fontSize: 16, 
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                            ),
+                            ..._importantApps.entries.map((entry) {
+                              final packageName = entry.key;
+                              final appName = entry.value;
+                              final bool isSelected = _selectedApps.contains(packageName);
+                              // Find if this app is in the installed apps list
+                              final installedApp = _installedApps.any((app) => 
+                                app.packageName == packageName);
+                              
+                              return ListTile(
+                                leading: Icon(
+                                  _getIconForApp(packageName),
+                                  size: 28,
+                                  color: Colors.grey.shade600,
+                                ),
+                                title: Text(
+                                  appName,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      packageName,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade600,
+                                        fontFamily: 'monospace',
+                                      ),
+                                    ),
+                                    if (isSelected)
+                                      Text(
+                                        'Selected for blocking',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.red.shade700,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    if (!installedApp)
+                                      Text(
+                                        'Not installed on device',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.orange.shade700,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                trailing: Checkbox(
+                                  value: isSelected,
+                                  onChanged: (value) {
+                                    setModalState(() {
+                                      if (value == true) {
+                                        _selectedApps.add(packageName);
+                                        print("Added to block list: $appName ($packageName)");
+                                      } else {
+                                        _selectedApps.remove(packageName);
+                                        print("Removed from block list: $appName ($packageName)");
+                                      }
+                                    });
+                                    // Update parent state too
+                                    setState(() {});
+                                  },
+                                  activeColor: Colors.black,
+                                ),
+                                onTap: () {
+                                  setModalState(() {
+                                    if (isSelected) {
+                                      _selectedApps.remove(packageName);
+                                      print("Removed from block list: $appName ($packageName)");
+                                    } else {
+                                      _selectedApps.add(packageName);
+                                      print("Added to block list: $appName ($packageName)");
+                                    }
+                                  });
+                                  // Update parent state too
+                                  setState(() {});
+                                },
+                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                dense: true,
+                              );
+                            }).toList(),
+                            
+                            Divider(thickness: 1),
+                            
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Text(
+                                'All Apps',
+                                style: TextStyle(
+                                  fontSize: 16, 
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                            ),
+                          ],
                           
-                          return ListTile(
-                            leading: app.icon != null
-                                ? Image.memory(app.icon!, width: 28, height: 28)
-                                : Icon(Icons.android, size: 28),
-                            title: Text(
-                              app.name,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
+                          // Regular installed apps list
+                          ...filteredApps.map((app) {
+                            final isSelected = _selectedApps.contains(app.packageName);
+                            // Skip if this app is one of our important apps (already shown above)
+                            if (searchController.text.isEmpty && _importantApps.containsKey(app.packageName)) {
+                              return SizedBox.shrink();
+                            }
+                            
+                            return ListTile(
+                              leading: app.icon != null
+                                  ? Image.memory(app.icon!, width: 28, height: 28)
+                                  : Icon(Icons.android, size: 28, color: Colors.grey.shade600),
+                              title: Text(
+                                app.name.isEmpty ? "Unknown App" : app.name,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            subtitle: Text(
-                              app.packageName,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    app.packageName,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                      fontFamily: 'monospace',
+                                    ),
+                                  ),
+                                  if (isSelected)
+                                    Text(
+                                      'Selected for blocking',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.red.shade700,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                ],
                               ),
-                            ),
-                            trailing: Checkbox(
-                              value: isSelected,
-                              onChanged: (value) {
+                              trailing: Checkbox(
+                                value: isSelected,
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    if (value == true) {
+                                      _selectedApps.add(app.packageName);
+                                      print("Added to block list: ${app.name} (${app.packageName})");
+                                    } else {
+                                      _selectedApps.remove(app.packageName);
+                                      print("Removed from block list: ${app.name} (${app.packageName})");
+                                    }
+                                  });
+                                  // Update parent state too
+                                  setState(() {});
+                                },
+                                activeColor: Colors.black,
+                              ),
+                              onTap: () {
                                 setModalState(() {
-                                  if (value == true) {
-                                    _selectedApps.add(app.packageName);
-                                    print("Added app to block list: ${app.name} (${app.packageName})");
-                                  } else {
+                                  if (isSelected) {
                                     _selectedApps.remove(app.packageName);
-                                    print("Removed app from block list: ${app.name} (${app.packageName})");
+                                    print("Removed from block list: ${app.name} (${app.packageName})");
+                                  } else {
+                                    _selectedApps.add(app.packageName);
+                                    print("Added to block list: ${app.name} (${app.packageName})");
                                   }
                                 });
                                 // Update parent state too
                                 setState(() {});
                               },
-                              activeColor: Colors.black,
-                            ),
-                            onTap: () {
-                              setModalState(() {
-                                if (isSelected) {
-                                  _selectedApps.remove(app.packageName);
-                                  print("Removed app from block list: ${app.name} (${app.packageName})");
-                                } else {
-                                  _selectedApps.add(app.packageName);
-                                  print("Added app to block list: ${app.name} (${app.packageName})");
-                                }
-                              });
-                              // Update parent state too
-                              setState(() {});
-                            },
-                          );
-                        },
+                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              dense: true,
+                            );
+                          }).toList(),
+                        ],
                       ),
                     ),
                   SizedBox(height: 16),
@@ -957,6 +1122,22 @@ class _CreateRulePageState extends State<CreateRulePage> {
     );
   }
 
+  // Helper method to get appropriate icon for popular apps
+  IconData _getIconForApp(String packageName) {
+    switch (packageName) {
+      case 'com.google.android.youtube':
+        return Icons.play_circle_filled;
+      case 'com.google.android.gm':
+        return Icons.mail;
+      case 'com.google.android.googlequicksearchbox':
+        return Icons.search;
+      case 'com.android.chrome':
+        return Icons.public;
+      default:
+        return Icons.android;
+    }
+  }
+
   void _createRule() {
     if (_nameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -998,14 +1179,23 @@ class _CreateRulePageState extends State<CreateRulePage> {
     print("-----------------------------------------------------");
     print("BLOCKED APPS (${newRule.blockedApps.length}):");
     for (int i = 0; i < newRule.blockedApps.length; i++) {
+      String packageName = newRule.blockedApps[i];
       String appName = "Unknown";
+      
+      // Check in installed apps
       for (var app in _installedApps) {
-        if (app.packageName == newRule.blockedApps[i]) {
+        if (app.packageName == packageName) {
           appName = app.name;
           break;
         }
       }
-      print("${i+1}. $appName (${newRule.blockedApps[i]})");
+      
+      // Check in important apps if not found in installed apps
+      if (appName == "Unknown" && _importantApps.containsKey(packageName)) {
+        appName = _importantApps[packageName]!;
+      }
+      
+      print("${i+1}. $appName ($packageName)");
     }
     print("-----------------------------------------------------");
     print("Schedule: ${newRule.isAllDay ? 'All day' : '${_formatTimeOfDay(newRule.startTime!)} - ${_formatTimeOfDay(newRule.endTime!)}'}");
