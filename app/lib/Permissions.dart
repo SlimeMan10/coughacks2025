@@ -4,7 +4,7 @@ import 'package:installed_apps/installed_apps.dart';
 import 'package:installed_apps/app_info.dart';
 import 'package:flutter/services.dart';
 
-const platform = MethodChannel('com.example.app/permissions');
+const platform = MethodChannel('com.hugh.coughacks/permissions');
 
 Future<List<String>> getAppPermissions(String packageName) async {
   try {
@@ -141,7 +141,6 @@ class _PermissionsTabState extends State<PermissionsTab> {
     setState(() => _isLoading = true);
 
     try {
-      // Fetch installed apps
       final List<AppInfo> installedApps = await InstalledApps.getInstalledApps(
         false,
         true,
@@ -175,9 +174,15 @@ class _PermissionsTabState extends State<PermissionsTab> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text("Failed to load permissions data"),
             backgroundColor: Colors.redAccent,
+            action: SnackBarAction(
+            label: 'Retry',
+            onPressed: () {
+              _loadPermissionsData(); // This is correct - void function that calls Future
+            },
+          ),
           ),
         );
       }
