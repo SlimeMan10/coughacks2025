@@ -113,22 +113,22 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
   };
 
   static const Map<String, Color> permissionColors = {
-    "android.permission.READ_CONTACTS": Colors.purple,
-    "android.permission.WRITE_CONTACTS": Colors.purple,
-    "android.permission.ACCESS_FINE_LOCATION": Colors.blue,
-    "android.permission.ACCESS_COARSE_LOCATION": Colors.blue,
-    "android.permission.CAMERA": Colors.red,
-    "android.permission.RECORD_AUDIO": Colors.orange,
-    "android.permission.READ_SMS": Colors.green,
-    "android.permission.SEND_SMS": Colors.green,
-    "android.permission.READ_PHONE_STATE": Colors.yellow,
-    "android.permission.CALL_PHONE": Colors.yellow,
-    "android.permission.READ_EXTERNAL_STORAGE": Colors.cyan,
-    "android.permission.WRITE_EXTERNAL_STORAGE": Colors.cyan,
-    "android.permission.GET_ACCOUNTS": Colors.pink,
-    "android.permission.BODY_SENSORS": Colors.brown,
-    "android.permission.READ_CALENDAR": Colors.teal,
-    "android.permission.WRITE_CALENDAR": Colors.teal,
+    "android.permission.READ_CONTACTS": Colors.black87,
+    "android.permission.WRITE_CONTACTS": Colors.black87,
+    "android.permission.ACCESS_FINE_LOCATION": Colors.black87,
+    "android.permission.ACCESS_COARSE_LOCATION": Colors.black87,
+    "android.permission.CAMERA": Colors.black87,
+    "android.permission.RECORD_AUDIO": Colors.black87,
+    "android.permission.READ_SMS": Colors.black87,
+    "android.permission.SEND_SMS": Colors.black87,
+    "android.permission.READ_PHONE_STATE": Colors.black87,
+    "android.permission.CALL_PHONE": Colors.black87,
+    "android.permission.READ_EXTERNAL_STORAGE": Colors.black87,
+    "android.permission.WRITE_EXTERNAL_STORAGE": Colors.black87,
+    "android.permission.GET_ACCOUNTS": Colors.black87,
+    "android.permission.BODY_SENSORS": Colors.black87,
+    "android.permission.READ_CALENDAR": Colors.black87,
+    "android.permission.WRITE_CALENDAR": Colors.black87,
   };
 
   @override
@@ -224,14 +224,8 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300, width: 1),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -239,60 +233,130 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
           if (app.icon != null)
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.memory(app.icon!, width: 100, height: 100),
+              child: Image.memory(app.icon!, width: 80, height: 80),
             )
           else
-            const Icon(Icons.android, size: 100, color: Colors.grey),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.android, size: 50, color: Colors.black87),
+            ),
           const SizedBox(height: 16),
           Text(
             app.name,
             style: const TextStyle(
-              fontSize: 24,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Colors.black,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          Icon(
-            permissionIcons[permission],
-            size: 50,
-            color: permissionColors[permission],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            "Needs ${permissionNames[permission]}",
-            style: const TextStyle(fontSize: 18, color: Colors.black54),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              permissionRisks[permission] ?? "Unknown risk",
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            "Does ${app.name} need this permission?",
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade400, width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  permissionIcons[permission],
+                  size: 18,
+                  color: Colors.black87,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  permissionNames[permission] ?? "Unknown",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            permissionRisks[permission] ?? "Unknown risk",
+            style: const TextStyle(fontSize: 14, color: Colors.black54),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Icon(Icons.arrow_back, color: Colors.red.withOpacity(0.7)),
-              const SizedBox(width: 8),
-              const Text("Swipe Left: Settings", style: TextStyle(color: Colors.red)),
-              const SizedBox(width: 24),
-              const Text("Swipe Right: Accept", style: TextStyle(color: Colors.green)),
-              const SizedBox(width: 8),
-              Icon(Icons.arrow_forward, color: Colors.green.withOpacity(0.7)),
+              _buildActionButton(
+                onTap: () {
+                  InstalledApps.openSettings(app.packageName);
+                },
+                text: "Settings",
+                icon: Icons.settings,
+                isNegative: true,
+              ),
+              _buildActionButton(
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Accepted ${app.name} - ${permissionNames[permission]}"),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                },
+                text: "Allow",
+                icon: Icons.check,
+                isNegative: false,
+              ),
             ],
           ),
         ],
+      ),
+    );
+  }
+  
+  Widget _buildActionButton({
+    required VoidCallback onTap, 
+    required String text, 
+    required IconData icon,
+    required bool isNegative,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isNegative ? Colors.grey.shade100 : Colors.black,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isNegative ? Colors.grey.shade400 : Colors.black,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: isNegative ? Colors.black : Colors.white,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: isNegative ? Colors.black : Colors.white,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -301,48 +365,85 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A1A),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'Review Permissions',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          _isReviewing 
+            ? IconButton(
+                icon: const Icon(Icons.close, color: Colors.black),
+                onPressed: () {
+                  setState(() => _isReviewing = false);
+                },
+              )
+            : IconButton(
+                icon: const Icon(Icons.filter_list, color: Colors.black),
+                onPressed: () {
+                  setState(() => _isReviewing = true);
+                },
+              ),
+        ],
+      ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.blueAccent))
+          ? const Center(child: CircularProgressIndicator(color: Colors.black))
           : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header with a button to start reviewing
+                // Header section
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.only(left: 16, top: 8, bottom: 16),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      const Icon(Icons.expand_more, color: Colors.grey),
+                      const SizedBox(width: 8),
                       const Text(
-                        "Permission Insights",
+                        'Permission overview',
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          setState(() => _isReviewing = !_isReviewing);
-                        },
-                        icon: const Icon(Icons.card_membership),
-                        label: Text(_isReviewing ? "Back" : "Review Permissions"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          color: Colors.grey,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
                 ),
+                
+                // Stats row
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      _buildStatBadge(
+                        count: dangerousPermissions.length,
+                        label: "permissions tracked",
+                        icon: Icons.shield_outlined,
+                      ),
+                      const SizedBox(width: 12),
+                      _buildStatBadge(
+                        count: appToPermissions.length,
+                        label: "apps with permissions",
+                        icon: Icons.apps,
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Main content
                 Expanded(
                   child: _isReviewing
                       ? (swipeItems.isEmpty
-                          ? const Center(
-                              child: Text(
-                                "No permissions to review",
-                                style: TextStyle(color: Colors.white, fontSize: 18),
-                              ),
-                            )
+                          ? _buildEmptyState()
                           : SwipeCards(
                               matchEngine: matchEngine!,
                               itemBuilder: (context, index) => swipeItems[index].content,
@@ -350,65 +451,118 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text("All permissions reviewed!"),
-                                    backgroundColor: Colors.green,
+                                    backgroundColor: Colors.black,
                                   ),
                                 );
                                 setState(() => _isReviewing = false);
                               },
                             ))
-                      : CustomScrollView(
-                          slivers: [
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.shield, color: Colors.blueAccent, size: 16),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          "Monitoring ${dangerousPermissions.length} permissions",
-                                          style: TextStyle(color: Colors.grey[400]),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.warning, color: Colors.orange, size: 16),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          "${permissionsToApps.length} permissions used by apps",
-                                          style: TextStyle(color: Colors.grey[400]),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.apps, color: Colors.green, size: 16),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          "${appToPermissions.length} apps using dangerous permissions",
-                                          style: TextStyle(color: Colors.grey[400]),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            SliverList(
-                              delegate: SliverChildBuilderDelegate(
-                                (context, index) => _buildPermissionSection(dangerousPermissions[index]),
-                                childCount: dangerousPermissions.length,
-                              ),
-                            ),
-                          ],
+                      : ListView.builder(
+                          itemCount: dangerousPermissions.length,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemBuilder: (context, index) => _buildPermissionSection(dangerousPermissions[index]),
                         ),
                 ),
               ],
             ),
+    );
+  }
+  
+  Widget _buildStatBadge({required int count, required String label, required IconData icon}) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Icon(icon, size: 20, color: Colors.black87),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  count.toString(),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(40),
+            ),
+            child: const Icon(Icons.check_circle_outline, size: 40, color: Colors.black87),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            "No permissions to review",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "All your permissions are in order",
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () {
+              setState(() => _isReviewing = false);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: const Text("Back to Overview"),
+          ),
+        ],
+      ),
     );
   }
 
@@ -419,78 +573,90 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
         ? (apps.length / appToPermissions.length * 100).toStringAsFixed(1)
         : "0.0";
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Card(
-        elevation: 4,
-        color: const Color(0xFF2D2D2D),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border(
-              left: BorderSide(
-                color: permissionColors[permission] ?? Colors.grey,
-                width: 4,
-              ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300, width: 1),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          leading: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(8),
             ),
-            borderRadius: BorderRadius.circular(16),
+            child: Icon(
+              permissionIcons[permission],
+              size: 18, 
+              color: Colors.black87
+            ),
           ),
-          child: ExpansionTile(
-            leading: CircleAvatar(
-              backgroundColor: (permissionColors[permission] ?? Colors.grey).withOpacity(0.2),
-              child: Icon(
-                permissionIcons[permission],
-                color: permissionColors[permission] ?? Colors.grey,
-              ),
+          title: Text(
+            permissionNames[permission] ?? "Unknown",
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
             ),
-            title: Text(
-              permissionNames[permission] ?? "Unknown",
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Text(
-                  hasApps ? "${apps.length} apps ($percentage%)" : "No apps",
-                  style: TextStyle(
-                    color: hasApps ? Colors.redAccent : Colors.green,
-                    fontSize: 12,
-                  ),
-                ),
-                Text(
-                  permissionRisks[permission] ?? "Unknown risk",
-                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                ),
-              ],
-            ),
-            collapsedBackgroundColor: const Color(0xFF2D2D2D),
-            backgroundColor: const Color(0xFF353535),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: hasApps ? _buildAppsList(apps, permission) : _buildSafeMessage(permission),
+              const SizedBox(height: 4),
+              Text(
+                hasApps ? "${apps.length} apps" : "No apps",
+                style: TextStyle(
+                  color: hasApps ? Colors.red.shade800 : Colors.green.shade800,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
+          trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      permissionRisks[permission] ?? "Unknown risk",
+                      style: TextStyle(color: Colors.grey.shade800, fontSize: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  hasApps 
+                      ? _buildAppsSimplifiedList(apps, permission) 
+                      : _buildSafeMessage(permission),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildAppsList(List<AppInfo> apps, String permission) {
+  Widget _buildAppsSimplifiedList(List<AppInfo> apps, String permission) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           "Apps with Access",
           style: TextStyle(
-            color: Colors.white,
+            color: Colors.grey.shade800,
             fontSize: 14,
             fontWeight: FontWeight.bold,
           ),
@@ -500,57 +666,62 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: apps.length,
-          separatorBuilder: (context, index) => Divider(color: Colors.grey[700]),
-          itemBuilder: (context, index) => _buildAppTile(apps[index], permission),
+          separatorBuilder: (context, index) => Divider(color: Colors.grey.shade200),
+          itemBuilder: (context, index) => _buildAppSimplifiedTile(apps[index], permission),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         ElevatedButton(
           onPressed: () {
-            InstalledApps.openSettings(apps.first.packageName);
+            setState(() => _isReviewing = true);
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blueAccent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
-          child: const Text("Review in Settings"),
+          child: const Text("Review All"),
         ),
       ],
     );
   }
 
-  Widget _buildAppTile(AppInfo app, String permission) {
-    final otherPermissions = appToPermissions[app.packageName]!
-        .where((p) => p != permission)
-        .map((p) => permissionNames[p] ?? p)
-        .toList();
-
+  Widget _buildAppSimplifiedTile(AppInfo app, String permission) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        color: const Color(0xFF404040),
-      ),
-      child: ListTile(
-        leading: app.icon != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.memory(app.icon!, width: 40, height: 40),
-              )
-            : const Icon(Icons.android, color: Colors.grey, size: 40),
-        title: Text(
-          app.name,
-          style: const TextStyle(color: Colors.white, fontSize: 14),
-        ),
-        subtitle: otherPermissions.isNotEmpty
-            ? Text(
-                "Also uses: ${otherPermissions.join(', ')}",
-                style: TextStyle(color: Colors.grey[400], fontSize: 12),
-              )
-            : null,
-        trailing: IconButton(
-          icon: const Icon(Icons.settings, color: Colors.grey),
-          onPressed: () => InstalledApps.openSettings(app.packageName),
-        ),
+      child: Row(
+        children: [
+          app.icon != null
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.memory(app.icon!, width: 40, height: 40),
+                )
+              : Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.android, size: 24, color: Colors.black87),
+                ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              app.name,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined, color: Colors.black54),
+            onPressed: () => InstalledApps.openSettings(app.packageName),
+          ),
+        ],
       ),
     );
   }
@@ -558,20 +729,23 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
   Widget _buildSafeMessage(String permission) {
     return Column(
       children: [
-        Icon(Icons.shield, size: 48, color: Colors.green.withOpacity(0.8)),
-        const SizedBox(height: 12),
-        const Text(
-          "All Clear!",
-          style: TextStyle(
-            color: Colors.green,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(24),
           ),
+          child: const Icon(Icons.check_circle_outlined, size: 28, color: Colors.green),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 12),
         Text(
-          "No apps are using ${permissionNames[permission]}.",
-          style: TextStyle(color: Colors.grey[400], fontSize: 14),
+          "No apps using ${permissionNames[permission]}",
+          style: const TextStyle(
+            color: Colors.black87, 
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
           textAlign: TextAlign.center,
         ),
       ],
