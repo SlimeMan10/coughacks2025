@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 // import 'tabs.dart';
 import 'native_rule_bridge.dart';
 import 'splash_screen.dart'; // Import the new splash screen file
-import 'services/permissions_data_service.dart'; // Import the permissions data service
+import 'database/ruleDatabase.dart';
 import 'package:app_usage/app_usage.dart';
 import 'package:installed_apps/installed_apps.dart';
-import 'database/ruleDatabase.dart';
 
 void main() async {
   // Ensure Flutter binding is initialized
@@ -16,15 +15,10 @@ void main() async {
   print('📱 THIS IS IN DART: Initializing NativeRuleBridge in main.dart');
   NativeRuleBridge.initialize();
 
-  // Start all preloading operations in parallel immediately, but silently
-  print('🔄 THIS IS IN DART: Starting data preloading (background)');
+  // Start other preloading operations in parallel (not permissions)
+  print('🔄 THIS IS IN DART: Starting background data preloading');
   
-  // Preload permissions data
-  final permissionsPreload = PermissionsDataService().preloadData();
-  
-  // Preload other data in parallel (will continue in background)
   // These futures don't need to be awaited - they'll continue in the background
-  // and the splash screen will track their completion
   _preloadAppUsageData();
   _preloadInstalledApps();
   _preloadRulesData();
@@ -73,7 +67,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Blockr', // Optional: App title
+      title: 'Cura', // Optional: App title
       theme: ThemeData(
         // Define a dark theme base if needed for consistency
         brightness: Brightness.light,

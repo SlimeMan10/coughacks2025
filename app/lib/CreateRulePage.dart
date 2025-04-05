@@ -6,6 +6,7 @@ import 'package:app/database/ruleDatabase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'database/RuleStorageTestUtil.dart';
+import 'dart:async';
 
 class CreateRulePage extends StatefulWidget {
   final Rule? ruleToEdit; // Optional rule for editing
@@ -78,7 +79,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
     _isStrict = rule.isStrict;
   }
 
-  // Modified to only include user apps and specific system apps
+  // Modified to only include user apps
   Future<void> _loadInstalledApps() async {
     try {
       if (_installedApps.isNotEmpty) {
@@ -97,9 +98,10 @@ class _CreateRulePageState extends State<CreateRulePage> {
 
       print("Fetching installed apps...");
 
-      // First get user apps (with icons)
+      // Get only user apps, not system apps
+      print("Getting user apps...");
       List<AppInfo> userApps = await InstalledApps.getInstalledApps(
-        false, // exclude system apps
+        false, // Get user apps only
         true,  // include app icons
         "",    // no filter
       ).timeout(
@@ -110,76 +112,16 @@ class _CreateRulePageState extends State<CreateRulePage> {
       );
       
       print("Fetched ${userApps.length} user apps with icons");
-
-      // Then get system apps (with icons)
-      List<AppInfo> systemApps = await InstalledApps.getInstalledApps(
-        true,  // include system apps only
-        true,  // include app icons
-        "",    // no filter
-      ).timeout(
-        Duration(seconds: 8),
-        onTimeout: () {
-          throw Exception("Timed out while loading system apps");
-        },
-      );
-      
-      print("Fetched ${systemApps.length} system apps with icons");
-      
-      // Filter system apps to only include the important ones we care about
-      List<String> importantPackageNames = [
-        'com.google.android.youtube',
-        'com.google.android.gm',
-        'com.google.android.googlequicksearchbox',
-        'com.android.chrome'
-      ];
-      
-      List<AppInfo> filteredSystemApps = systemApps.where((app) => 
-        importantPackageNames.contains(app.packageName)
-      ).toList();
-      
-      print("Filtered to ${filteredSystemApps.length} important system apps");
-      
-      // Combine both lists
-      List<AppInfo> allApps = [...userApps, ...filteredSystemApps];
-      
-      // Remove any duplicates that might exist
-      final seen = <String>{};
-      allApps = allApps.where((app) => seen.add(app.packageName)).toList();
       
       // Sort by name for better usability
-      allApps.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-      
-      // Make sure important apps are in the list
-      for (var entry in _importantApps.entries) {
-        String packageName = entry.key;
-        String appName = entry.value;
-        
-        // Check if this app exists in our fetched apps
-        bool found = allApps.any((app) => app.packageName == packageName);
-        
-        if (!found) {
-          print("Important app not found in device scan: $appName ($packageName)");
-        } else {
-          // Mark that we found it for debugging
-          print("Found important app: $appName ($packageName)");
-          
-          // Check if it has an icon
-          bool hasIcon = allApps.any((app) => app.packageName == packageName && app.icon != null);
-          
-          if (!hasIcon) {
-            print("No icon found for important app: $appName ($packageName)");
-          } else {
-            print("Icon available for important app: $appName ($packageName)");
-          }
-        }
-      }
+      userApps.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
       
       setState(() {
-        _installedApps = allApps;
+        _installedApps = userApps;
         _isLoadingApps = false;
       });
 
-      print("App list ready with ${allApps.length} total installed apps");
+      print("App list ready with ${userApps.length} user apps");
       
     } catch (e) {
       setState(() {
@@ -269,7 +211,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
                 ),
               ),
 
-              // Session name inpu
+              // Session name input
               Container(
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -902,7 +844,9 @@ class _CreateRulePageState extends State<CreateRulePage> {
                               icon: Icon(Icons.clear),
                               onPressed: () {
                                 searchController.clear();
-                                filterApps('');
+                                setModalState(() {
+                                  filterApps('');
+                                });
                               },
                             )
                           : null,
@@ -915,7 +859,11 @@ class _CreateRulePageState extends State<CreateRulePage> {
                         borderSide: BorderSide(color: Colors.grey.shade300),
                       ),
                     ),
-                    onChanged: filterApps,
+                    onChanged: (query) {
+                      setModalState(() {
+                        filterApps(query);
+                      });
+                    },
                   ),
                   SizedBox(height: 16),
                   if (_isLoadingApps)
@@ -965,7 +913,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
                         ],
                       ),
                     )
-                  else if (filteredApps.isEmpty && searchController.text.isEmpty)
+                  else if (filteredApps.isEmpty)
                     Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -1006,52 +954,29 @@ class _CreateRulePageState extends State<CreateRulePage> {
                             ),
                           ),
 
-                          // All apps (including important apps)
+                          // All apps (user apps only, no system apps)
                           ...filteredApps.map((app) {
                             final isSelected = _selectedApps.contains(app.packageName);
-                            // Use custom icon for important apps if app has no icon
-                            final bool isImportantApp = _importantApps.containsKey(app.packageName);
+                            
                             return ListTile(
                               leading: app.icon != null
                                   ? Image.memory(app.icon!, width: 28, height: 28)
-                                  : Icon(
-                                      isImportantApp 
-                                          ? _getIconForApp(app.packageName) 
-                                          : Icons.android,
-                                      size: 28,
-                                      color: Colors.grey.shade600
-                                    ),
+                                  : Icon(Icons.android, size: 28, color: Colors.grey.shade600),
                               title: Text(
-                                app.name.isEmpty 
-                                    ? (isImportantApp ? _importantApps[app.packageName]! : "Unknown App") 
-                                    : app.name,
+                                app.name.isEmpty ? "Unknown App" : app.name,
                                 style: TextStyle(
                                   fontWeight: FontWeight.w500,
                                   color: Colors.black,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    app.packageName,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade600,
-                                      fontFamily: 'monospace',
-                                    ),
-                                  ),
-                                  if (isSelected)
-                                    Text(
-                                      'Selected for blocking',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.red.shade700,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                ],
+                              subtitle: Text(
+                                app.packageName,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                  fontFamily: 'monospace',
+                                ),
                               ),
                               trailing: Checkbox(
                                 value: isSelected,
@@ -1158,6 +1083,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
   }
 
   Future<void> _createRule() async {
+    // Validate inputs
     if (_nameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please enter a session name')),
@@ -1179,6 +1105,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
       return;
     }
 
+    // Create the rule object
     final newRule = Rule(
       name: _nameController.text,
       blockedApps: _selectedApps,
@@ -1189,128 +1116,45 @@ class _CreateRulePageState extends State<CreateRulePage> {
       isStrict: _isStrict,
     );
 
-    // Enhanced debug prints with very clear formatting
-    print("\n");
-    print("=====================================================");
-    print("                  RULE ${_isEditMode ? 'UPDATED' : 'CREATED'}                  ");
-    print("=====================================================");
-    print("Rule Name: ${newRule.name}");
-    print("-----------------------------------------------------");
-    print("BLOCKED APPS (${newRule.blockedApps.length}):");
-    for (int i = 0; i < newRule.blockedApps.length; i++) {
-      String packageName = newRule.blockedApps[i];
-      String appName = "Unknown";
-
-      // Check in installed apps
-      for (var app in _installedApps) {
-        if (app.packageName == packageName) {
-          appName = app.name;
-          break;
-        }
-      }
-
-      // Check in important apps if not found in installed apps
-      if (appName == "Unknown" && _importantApps.containsKey(packageName)) {
-        appName = _importantApps[packageName]!;
-      }
-
-      print("${i+1}. $appName ($packageName)");
-    }
-    print("-----------------------------------------------------");
-    print("Schedule: ${newRule.isAllDay ? 'All day' : '${_formatTimeOfDay(newRule.startTime!)} - ${_formatTimeOfDay(newRule.endTime!)}'}");
-    print("Active days: ${newRule.applicableDays.map((d) => d.toString().split('.').last).join(', ')}");
-    print("Strict mode: ${newRule.isStrict ? 'YES' : 'NO'}");
-    print("=====================================================\n");
-
-    // Show loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(color: Colors.black),
-                SizedBox(width: 20),
-                Text("Saving rule..."),
-              ],
-            ),
-          ),
-        );
-      },
+    // Show a minimal saving indicator via snackbar that doesn't block the UI
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Saving rule...'),
+        duration: Duration(seconds: 2),
+        backgroundColor: Colors.grey[800],
+      ),
     );
 
-    // Save the rule and run the tes
+    // Use a separate try/catch block to handle the save operation
     try {
-      // Get SharedPreferences instance for local settings
-      final prefs = await SharedPreferences.getInstance();
-
-      // Save rule details to SharedPreferences
-      await prefs.setString('ruleName', newRule.name);
-      await prefs.setStringList('blockedApps', newRule.blockedApps);
-      await prefs.setBool('isAllDay', newRule.isAllDay);
-
-      if (!newRule.isAllDay) {
-        await prefs.setString('startTimeHour', newRule.startTime!.hour.toString());
-        await prefs.setString('startTimeMinute', newRule.startTime!.minute.toString());
-        await prefs.setString('endTimeHour', newRule.endTime!.hour.toString());
-        await prefs.setString('endTimeMinute', newRule.endTime!.minute.toString());
-      }
-
-      // Convert selectedDays to strings for storage
-      await prefs.setStringList('selectedDays',
-        newRule.applicableDays.map((day) => day.toString()).toList());
-
-      await prefs.setBool('isStrict', newRule.isStrict);
-
-      // Create storage instance and save rule
+      // Save in background
       final storage = RuleStorage();
-
       bool success = false;
+
+      // Check if rule exists and update or add accordingly
       if (await storage.ruleExists(newRule.name)) {
         success = await storage.updateRule(newRule.name, newRule);
       } else {
         success = await storage.addRule(newRule);
       }
 
-      // Close loading dialog
-      Navigator.pop(context);
-
-      // Run the storage test with the saved rule
+      // Handle result with appropriate message
       if (success) {
-        try {
-          print("Running rule storage test...");
-          final testResults = await RuleStorageTestUtil.testRuleStorage(newRule);
-          print("Test completed, showing results dialog");
-          // Don't navigate back until the user has seen the test results
-          await _showTestResultsDialog(testResults);
-
-          // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Rule saved successfully'),
-              duration: const Duration(seconds: 2),
-              backgroundColor: Colors.green,
-            ),
-          );
-
-          // Return to previous screen with the rule AFTER dialog is closed
-          Navigator.pop(context, newRule);
-        } catch (testError) {
-          print("Error during test: $testError");
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Rule saved but test failed: $testError'),
-              duration: const Duration(seconds: 3),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
+        print("Rule saved successfully: ${newRule.name}");
+        
+        // Show quick success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Rule saved successfully'),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Return to previous screen with the new rule
+        Navigator.pop(context, newRule);
       } else {
-        // Show error message
+        // Show error without blocking the UI
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to save rule'),
@@ -1320,115 +1164,17 @@ class _CreateRulePageState extends State<CreateRulePage> {
         );
       }
     } catch (e) {
-      // Close loading dialog if it's showing
-      Navigator.of(context).pop();
-
-      // Show error message
+      print("Error saving rule: $e");
+      
+      // Show error without blocking the UI
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error saving rule: $e'),
+          content: Text('Error: $e'),
           duration: const Duration(seconds: 3),
           backgroundColor: Colors.red,
         ),
       );
     }
-  }
-
-  // Show test results in a dialog and return a Future that completes when dialog is closed
-  Future<void> _showTestResultsDialog(String results) async {
-    print("Dialog content length: ${results.length}");
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.black,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.purpleAccent, width: 2),
-          ),
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.9,
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.task_alt, color: Colors.purpleAccent),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Rule Storage Test Results',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.purpleAccent,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[900],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[700]!),
-                  ),
-                  padding: const EdgeInsets.all(12),
-                  child: SingleChildScrollView(
-                    child: SelectableText(
-                      results,
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 12,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        // Copy results to clipboard
-                        Clipboard.setData(ClipboardData(text: results));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Results copied to clipboard')),
-                        );
-                      },
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.copy, size: 16, color: Colors.white70),
-                          SizedBox(width: 4),
-                          Text('Copy', style: TextStyle(color: Colors.white70)),
-                        ],
-                      ),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber,
-                        foregroundColor: Colors.black,
-                      ),
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Close'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 
   @override

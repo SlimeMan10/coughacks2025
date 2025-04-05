@@ -9,6 +9,12 @@ import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'shareScreenshot.dart';
+import 'package:share_plus/share_plus.dart';
+import 'dart:typed_data';
+import 'package:flutter/rendering.dart';
+import 'dart:ui' as ui;
+import 'dart:math';
+import 'tabs.dart';
 
 void main() {
   runApp(const MaterialApp(
@@ -47,7 +53,7 @@ class AppUsageAppState extends State<AppUsageApp>
   List<AppUsageInfo> _infos = [];
   Map<String, AppInfo> _appMap = {};
   Map<String, dynamic> _insights = {};
-  double _overallRisk = 0;
+  double _privacyRisk = 0;
   bool _isLoading = false;
   String? _error;
 
@@ -139,12 +145,12 @@ class AppUsageAppState extends State<AppUsageApp>
       infoList.sort((a, b) => b.usage.compareTo(a.usage));
 
       Map<String, dynamic> insights = _calculateInsights(infoList);
-      double overallRisk = _calculateOverallRisk(infoList, insights);
+      double privacyRisk = _calculatePrivacyRisk(infoList, insights);
 
       setState(() {
         _infos = infoList;
         _insights = insights;
-        _overallRisk = overallRisk;
+        _privacyRisk = privacyRisk;
         _isLoading = false;
       });
     } catch (e) {
@@ -203,7 +209,7 @@ class AppUsageAppState extends State<AppUsageApp>
     };
   }
 
-  double _calculateOverallRisk(List<AppUsageInfo> infos, Map<String, dynamic> insights) {
+  double _calculatePrivacyRisk(List<AppUsageInfo> infos, Map<String, dynamic> insights) {
     if (infos.isEmpty) return 0;
     double totalRisk = 0;
     int totalSeconds = 0;
@@ -413,14 +419,14 @@ class AppUsageAppState extends State<AppUsageApp>
                   child: Column(
                     children: [
                       const Text(
-                        'Overall Risk',
+                        'Privacy Risk',
                         style: TextStyle(color: Colors.black54, fontSize: 14),
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        '${_overallRisk.toStringAsFixed(1)}/100',
+                        '${_privacyRisk.toStringAsFixed(1)}/100',
                         style: TextStyle(
-                          color: _getRiskColor(_overallRisk.round()),
+                          color: _getRiskColor(_privacyRisk.round()),
                           fontSize: 20,
                           fontWeight: FontWeight.bold
                         ),
@@ -430,6 +436,50 @@ class AppUsageAppState extends State<AppUsageApp>
                 ),
               ),
             ],
+          ),
+          
+          // Add Review Permissions button - larger with shield icon
+          const SizedBox(height: 24),
+          Container(
+            width: double.infinity, // Make button full width
+            child: ElevatedButton.icon(
+              onPressed: () {
+                // Find closest Scaffold and use it to show a bottom sheet with message
+                // Since we can't directly navigate to a specific tab from here
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Tap the 'Permissions' tab to review app permissions"),
+                    duration: Duration(seconds: 3),
+                    behavior: SnackBarBehavior.floating,
+                    action: SnackBarAction(
+                      label: 'OK',
+                      onPressed: () {},
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(
+                Icons.shield, // Shield icon
+                color: Colors.white,
+                size: 28, // Larger icon
+              ),
+              label: const Text(
+                'Review App Permissions',
+                style: TextStyle(
+                  color: Colors.white, 
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18, // Larger text
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24), // More padding
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12), // Slightly more rounded
+                ),
+                elevation: 3, // More elevation
+              ),
+            ),
           ),
         ],
       ),

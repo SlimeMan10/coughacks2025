@@ -42,7 +42,7 @@ class OnboardingConfig {
 
   // Screen 5: Original splash screen
   static const Map<String, String> screen5 = {
-    'title': 'Blockr',
+    'title': 'Cura',
     'content': 'The all-in-one privacy app for your phone!',
     'design_notes': 'Black background with info blocks and Let\'s Go button to request permissions.'
   };

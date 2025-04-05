@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'tabs.dart'; // Your main app screen
 import 'method_channel.dart';
-import 'services/permissions_data_service.dart'; // Import the permissions data service
 import 'package:app_usage/app_usage.dart';
 import 'package:installed_apps/installed_apps.dart';
 import 'database/ruleDatabase.dart';
@@ -20,18 +19,11 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
   
   // Loading states
   bool _checkingPermissions = false;
-  Timer? _permissionCheckTimer;
-  Timer? _permissionsDataTimeout;
-  
-  // Preloading status trackers (kept for background tracking)
-  bool _permissionsDataReady = false;
-  bool _appUsageDataReady = false;
-  bool _installedAppsReady = false;
-  bool _rulesDataReady = false;
   
   // Progress tracking
   double _preloadProgress = 0.0;
   String _loadingMessage = "Starting...";
+  bool _showDebugLoading = false; // For debugging loading status
 
   @override
   void initState() {
@@ -39,158 +31,28 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
     WidgetsBinding.instance.addObserver(this);
     _pageController = PageController(initialPage: 0);
     
-    // Start all preloading operations
-    _startPreloading();
-    
-    // Set a fallback timeout
-    _permissionsDataTimeout = Timer(Duration(seconds: 15), () {
-      print("Preloading timed out, proceeding anyway");
-      _forceCompletePreloading();
-    });
-    
     // Check permissions initially
-    _checkAndNavigateIfPermissionsGranted();
-  }
-  
-  void _startPreloading() async {
-    // Start all preloading tasks in parallel
-    _preloadPermissionsData();
-    _preloadAppUsageData();
-    _preloadInstalledApps();
-    _preloadRulesData();
-  }
-  
-  void _updatePreloadProgress(String message, {double progressIncrement = 0.05}) {
-    if (mounted) {
-      setState(() {
-        _loadingMessage = message;
-        _preloadProgress = min(1.0, _preloadProgress + progressIncrement);
-      });
-    }
-  }
-  
-  void _preloadPermissionsData() {
-    final dataService = PermissionsDataService();
-    
-    // Add one-time listener for when data is loaded
-    dataService.addDataLoadedListener(() {
-      print("Permissions data preloaded successfully!");
-      setState(() {
-        _permissionsDataReady = true;
-      });
-      _checkIfAllPreloaded();
-    });
-    
-    // If data is already loaded, mark as ready
-    if (dataService.isLoaded) {
-      print("Permissions data already loaded!");
-      setState(() {
-        _permissionsDataReady = true;
-      });
-      _checkIfAllPreloaded();
-    }
-  }
-  
-  void _preloadAppUsageData() async {
-    try {
-      // Preload app usage data for the last week
-      final now = DateTime.now();
-      final lastWeek = now.subtract(Duration(days: 7));
-      
-      await AppUsage().getAppUsage(lastWeek, now);
-      
-      setState(() {
-        _appUsageDataReady = true;
-      });
-      print("App usage data preloaded successfully");
-    } catch (e) {
-      print("Error preloading app usage data: $e");
-      // Consider it ready anyway to not block UI
-      setState(() {
-        _appUsageDataReady = true;
-      });
-    }
-    
-    _checkIfAllPreloaded();
-  }
-  
-  void _preloadInstalledApps() async {
-    try {
-      await InstalledApps.getInstalledApps(false, true, "");
-      
-      setState(() {
-        _installedAppsReady = true;
-      });
-      print("Installed apps data preloaded successfully");
-    } catch (e) {
-      print("Error preloading installed apps: $e");
-      // Consider it ready anyway to not block UI
-      setState(() {
-        _installedAppsReady = true;
-      });
-    }
-    
-    _checkIfAllPreloaded();
-  }
-  
-  void _preloadRulesData() async {
-    try {
-      final RuleStorage ruleStorage = RuleStorage();
-      await ruleStorage.getRules();
-      
-      setState(() {
-        _rulesDataReady = true;
-      });
-      print("Rules data preloaded successfully");
-    } catch (e) {
-      print("Error preloading rules data: $e");
-      // Consider it ready anyway to not block UI
-      setState(() {
-        _rulesDataReady = true;
-      });
-    }
-    
-    _checkIfAllPreloaded();
-  }
-  
-  void _checkIfAllPreloaded() {
-    if (_permissionsDataReady && _appUsageDataReady && _installedAppsReady && _rulesDataReady) {
-      _permissionsDataTimeout?.cancel();
-      print("All data loaded successfully!");
-      // Check if we can navigate based on permissions
-      _checkAndNavigateIfPermissionsGranted();
-    }
-  }
-  
-  void _forceCompletePreloading() {
-    setState(() {
-      _permissionsDataReady = true;
-      _appUsageDataReady = true;
-      _installedAppsReady = true;
-      _rulesDataReady = true;
-    });
-    _checkAndNavigateIfPermissionsGranted();
+    _checkPermissions();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Check permissions when app is resumed (after potentially granting permissions)
-      _checkAndNavigateIfPermissionsGranted();
+      // Immediately check permissions when app is resumed (after returning from settings)
+      _checkPermissions();
     }
     super.didChangeAppLifecycleState(state);
   }
 
   @override
   void dispose() {
-    _permissionCheckTimer?.cancel();
-    _permissionsDataTimeout?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     super.dispose();
   }
 
-  Future<void> _checkAndNavigateIfPermissionsGranted() async {
+  // Just check if permissions are granted, no waiting
+  Future<void> _checkPermissions() async {
     if (_checkingPermissions) return;
     
     _checkingPermissions = true;
@@ -201,21 +63,10 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
       
       print("Accessibility enabled: $accessibilityEnabled");
       print("Overlay permission: $overlayPermission");
-      print("All data preloaded: ${_permissionsDataReady && _appUsageDataReady && _installedAppsReady && _rulesDataReady}");
       
-      // Only navigate if all conditions are met
-      final bool allDataReady = _permissionsDataReady && _appUsageDataReady && 
-                               _installedAppsReady && _rulesDataReady;
-      
-      if (accessibilityEnabled && overlayPermission && allDataReady) {
+      // If permissions are granted, immediately navigate to home
+      if (accessibilityEnabled && overlayPermission) {
         _navigateToHome();
-      } else if (mounted) {
-        // If permissions not granted, schedule a check after a short delay
-        _permissionCheckTimer?.cancel();
-        _permissionCheckTimer = Timer(const Duration(seconds: 2), () {
-          _checkingPermissions = false;
-          _checkAndNavigateIfPermissionsGranted();
-        });
       }
     } catch (e) {
       print("Error checking permissions: $e");
@@ -227,6 +78,7 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
   }
 
   void _navigateToHome() {
+    print("Navigating to home");
     if (!mounted) return;
     
     Navigator.of(context).pushReplacement(
@@ -252,25 +104,29 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
           // Progress Bar
           Padding(
             padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 16, left: 24, right: 24, bottom: 16),
-            child: Container(
-              height: 8,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Row(
-                children: [
-                  AnimatedContainer(
-                    duration: Duration(milliseconds: 300),
-                    width: max(0, (_currentPage + 1) / _totalPages * (screenWidth - 48)),
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
+            child: Column(
+              children: [
+                Container(
+                  height: 8,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                ],
-              ),
+                  child: Row(
+                    children: [
+                      AnimatedContainer(
+                        duration: Duration(milliseconds: 300),
+                        width: max(0, (_currentPage + 1) / _totalPages * (screenWidth - 48)),
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           
@@ -407,7 +263,7 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      "Blockr",
+                      "Cura",
                       style: TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.w300,
@@ -469,7 +325,7 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "Blockr never stores your data; permissions are only used to monitor usage locally on your device.",
+                      "Cura never stores your data; permissions are only used to monitor usage locally on your device.",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.black87,
@@ -566,7 +422,7 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
     final bool overlayPermission = await NativeBridge.hasOverlayPermission();
     
     if (accessibilityEnabled && overlayPermission) {
-      // Permissions already granted, navigate directly
+      // Permissions already granted, navigate directly to home
       _navigateToHome();
       return;
     }
@@ -580,13 +436,6 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
       await Future.delayed(const Duration(milliseconds: 500));
       await NativeBridge.requestOverlayPermission();
     }
-    
-    // Start checking permissions after a short delay
-    _permissionCheckTimer?.cancel();
-    _permissionCheckTimer = Timer(const Duration(seconds: 1), () {
-      _checkingPermissions = false;
-      _checkAndNavigateIfPermissionsGranted();
-    });
   }
 
   Widget _buildShieldIcon() {
@@ -733,6 +582,182 @@ class OnboardingScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class ReadyScreen extends StatefulWidget {
+  const ReadyScreen({Key? key}) : super(key: key);
+
+  @override
+  State<ReadyScreen> createState() => _ReadyScreenState();
+}
+
+class _ReadyScreenState extends State<ReadyScreen> {
+  bool _appUsagePreloaded = false;
+  
+  @override
+  void initState() {
+    super.initState();
+    // Immediately start preloading app usage data
+    _preloadAppUsageData();
+  }
+  
+  // Preload app usage data to ensure it's ready when the user continues
+  Future<void> _preloadAppUsageData() async {
+    print("Preloading AppUsage data from ReadyScreen");
+    
+    try {
+      // Create the Tabs instance early but don't display it
+      final tabs = Tabs();
+      
+      // Preload app usage data for the last week
+      final now = DateTime.now();
+      final lastWeek = now.subtract(Duration(days: 7));
+      
+      // Fetch the app usage data
+      print("Fetching app usage data in ReadyScreen...");
+      final usage = await AppUsage().getAppUsage(lastWeek, now);
+      print("ReadyScreen: Successfully preloaded ${usage.length} app records");
+      
+      // Preload installed apps list
+      final apps = await InstalledApps.getInstalledApps(false, true, "");
+      print("ReadyScreen: Successfully preloaded ${apps.length} installed apps");
+      
+      setState(() {
+        _appUsagePreloaded = true;
+      });
+      print("AppUsage data fully preloaded and ready for navigation");
+    } catch (e) {
+      print("Error preloading app usage data in ReadyScreen: $e");
+      // Consider it ready anyway to not block navigation
+      setState(() {
+        _appUsagePreloaded = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Success icon
+                Container(
+                  width: 160,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        spreadRadius: 2,
+                      )
+                    ],
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.shield,
+                      size: 80,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                
+                // Main title
+                Text(
+                  "Ready to take back control?",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Description
+                Text(
+                  "You're all set up with the permissions needed. Cura is ready to help you regain control of your screen time.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black54,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 60),
+                
+                // Continue button - Direct navigation to Tabs with fade transition
+                Container(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      print("Continue button pressed in ReadyScreen");
+                      if (!_appUsagePreloaded) {
+                        print("AppUsage data still loading, but proceeding with navigation");
+                      }
+                      
+                      Navigator.of(context).pushReplacement(
+                        PageRouteBuilder(
+                          pageBuilder: (_, __, ___) => Tabs(),
+                          transitionsBuilder: (_, animation, __, child) {
+                            return FadeTransition(opacity: animation, child: child);
+                          },
+                          transitionDuration: const Duration(milliseconds: 500),
+                        ),
+                      );
+                    },
+                    icon: Icon(
+                      Icons.arrow_forward,
+                      size: 24,
+                      color: Colors.white,
+                    ),
+                    label: Text(
+                      _appUsagePreloaded ? "Continue" : "Preparing...",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 3,
+                    ),
+                  ),
+                ),
+                
+                // Very subtle loading indicator if data isn't loaded yet
+                if (!_appUsagePreloaded)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12.0),
+                    child: Text(
+                      "Setting up app data...",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.black38,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -4,7 +4,6 @@ import 'package:installed_apps/installed_apps.dart';
 import 'package:installed_apps/app_info.dart';
 import 'package:flutter/services.dart';
 import 'package:swipe_cards/swipe_cards.dart';
-import 'package:app/services/permissions_data_service.dart';
 
 const platform = MethodChannel('com.hugh.coughacks/permissions');
 
@@ -29,9 +28,6 @@ class PermissionsTab extends StatefulWidget {
 }
 
 class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
-  // Use the PermissionsDataService
-  final PermissionsDataService _dataService = PermissionsDataService();
-  
   Map<String, List<AppInfo>> permissionsToApps = {};
   Map<String, List<String>> appToPermissions = {};
   List<Map<String, dynamic>> permissionCards = [];
@@ -157,137 +153,95 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
       curve: Curves.easeInOut,
     );
     
-    // Set up listeners for the data service
-    _dataService.addLoadingListener((isLoading) {
-      if (mounted) {
-        setState(() {
-          _isLoading = isLoading;
-        });
-      }
-    });
-    
-    _dataService.addDataLoadedListener(() {
-      if (mounted) {
-        _prepareUIFromCachedData();
-      }
-    });
-    
-    _dataService.addErrorListener((error) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        _showErrorSnackBar(error);
-      }
-    });
-    
-    // Check if data is already loaded or start loading
-    if (_dataService.isLoaded) {
-      _prepareUIFromCachedData();
-    } else {
-      _loadPermissionsData();
-    }
+    // Load data immediately
+    _loadPermissionsData();
   }
   
   @override
   void dispose() {
     _pageTransitionController.dispose();
-    
-    // Clean up listeners
-    _dataService.removeLoadingListener((isLoading) {
-      if (mounted) {
-        setState(() {
-          _isLoading = isLoading;
-        });
-      }
-    });
-    
-    _dataService.removeDataLoadedListener(() {
-      if (mounted) {
-        _prepareUIFromCachedData();
-      }
-    });
-    
-    _dataService.removeErrorListener((error) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        _showErrorSnackBar(error);
-      }
-    });
-    
     super.dispose();
   }
 
-  // Prepare UI data from the cached service data
-  void _prepareUIFromCachedData() {
-    // Get data from service
-    permissionsToApps = _dataService.permissionsToApps;
-    appToPermissions = _dataService.appToPermissions;
-    permissionCards = _dataService.permissionCards;
+  // Load permissions data directly
+  Future<void> _loadPermissionsData() async {
+    if (_isLoading == false) return; // Skip if already loaded and not refreshing
     
-    // Create swipe items
-    _createSwipeItems();
-    
-    // Update UI
-    if (mounted) {
+    setState(() => _isLoading = true);
+
+    try {
+      final List<AppInfo> installedApps = await InstalledApps.getInstalledApps(false, true, "");
+      final Map<String, List<AppInfo>> tempPermissionsToApps = {};
+      final Map<String, List<String>> tempAppToPermissions = {};
+
+      for (var app in installedApps) {
+        final permissions = await getAppPermissions(app.packageName);
+        final dangerous = permissions.where((p) => dangerousPermissions.contains(p)).toList();
+        if (dangerous.isNotEmpty) {
+          tempAppToPermissions[app.packageName] = dangerous;
+          for (var permission in dangerous) {
+            tempPermissionsToApps.putIfAbsent(permission, () => []).add(app);
+          }
+        }
+      }
+
+      // Build the list of app-permission pairs
+      final List<Map<String, dynamic>> cards = [];
+      for (var permission in dangerousPermissions) {
+        List<AppInfo> apps = tempPermissionsToApps[permission] ?? [];
+        for (var app in apps) {
+          cards.add({
+            'app': app,
+            'permission': permission,
+          });
+        }
+      }
+      cards.shuffle();
+
+      // Create swipe items
+      final items = cards.map((card) {
+        AppInfo app = card['app'];
+        String permission = card['permission'];
+        return SwipeItem(
+          content: _buildCardContent(app, permission),
+          likeAction: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Accepted ${app.name} - ${permissionNames[permission]}"),
+                backgroundColor: Colors.green,
+              ),
+            );
+          },
+          nopeAction: () {
+            InstalledApps.openSettings(app.packageName);
+          },
+        );
+      }).toList();
+
       setState(() {
+        permissionsToApps = tempPermissionsToApps;
+        appToPermissions = tempAppToPermissions;
+        permissionCards = cards;
+        swipeItems = items;
+        matchEngine = MatchEngine(swipeItems: items);
         _isLoading = false;
       });
-    }
-  }
-  
-  // Create SwipeItems from permissionCards
-  void _createSwipeItems() {
-    swipeItems = permissionCards.map((card) {
-      AppInfo app = card['app'];
-      String permission = card['permission'];
-      return SwipeItem(
-        content: _buildCardContent(app, permission),
-        likeAction: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Accepted ${app.name} - ${permissionNames[permission]}"),
-              backgroundColor: Colors.green,
+    } catch (e) {
+      print("Error fetching data: $e");
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text("Failed to load permissions data"),
+            backgroundColor: Colors.redAccent,
+            action: SnackBarAction(
+              label: 'Retry',
+              onPressed: _loadPermissionsData,
             ),
-          );
-        },
-        nopeAction: () {
-          InstalledApps.openSettings(app.packageName);
-        },
-      );
-    }).toList();
-
-    matchEngine = MatchEngine(swipeItems: swipeItems);
-  }
-  
-  // Show error snackbar
-  void _showErrorSnackBar(String error) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Failed to load permissions data"),
-        backgroundColor: Colors.redAccent,
-        action: SnackBarAction(
-          label: 'Retry',
-          onPressed: _loadPermissionsData,
-        ),
-      ),
-    );
-  }
-  
-  // Load permissions data through the service
-  Future<void> _loadPermissionsData() async {
-    setState(() => _isLoading = true);
-    
-    // Use the data service to load or refresh the data
-    if (_dataService.isLoaded) {
-      await _dataService.refreshData();
-    } else {
-      await _dataService.preloadData();
+          ),
+        );
+      }
     }
-    
-    // No need to update state here as it's handled by listeners
   }
 
   // Toggle review mode with animation
@@ -585,7 +539,7 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
                         child: Row(
                           children: [
                             _buildStatBadge(
-                              count: _dataService.dangerousPermissionsList.length,
+                              count: dangerousPermissions.length,
                               label: "permissions",
                               icon: Icons.shield_outlined,
                             ),
@@ -604,9 +558,9 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
                       // Permission list
                       Expanded(
                         child: ListView.builder(
-                          itemCount: _dataService.dangerousPermissionsList.length,
+                          itemCount: dangerousPermissions.length,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemBuilder: (context, index) => _buildPermissionSection(_dataService.dangerousPermissionsList[index]),
+                          itemBuilder: (context, index) => _buildPermissionSection(dangerousPermissions[index]),
                         ),
                       ),
                     ],
