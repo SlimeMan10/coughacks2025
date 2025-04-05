@@ -180,3 +180,4 @@ class AppUsageAppState extends State<AppUsageApp> {
       ),
     );
   }
+}
