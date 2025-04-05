@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'ScreenTimePieChart.dart';
@@ -28,14 +30,14 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
 
   Future<void> getScreentimeLast7Days() async {
     final AppUsage appUsage = AppUsage();
-    List<Duration> lastWeekScreentimes = [];
 
     DateTime now = DateTime.now();
     DateTime todayMidnight = DateTime(now.year, now.month, now.day);
 
     for (int i = 6; i >= 0; i--) {
       DateTime startOfDay = todayMidnight.subtract(Duration(days: i));
-      DateTime endOfDay = (i == 0) ? now : startOfDay.add(Duration(days: 1));
+      DateTime endOfDay = startOfDay.add(Duration(days: 1));
+      print("start, end $startOfDay, $endOfDay");
 
       try {
         List<AppUsageInfo> usage = await appUsage.getAppUsage(
@@ -47,19 +49,14 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
         for (var info in usage) {
           totalScreentime += info.usage;
         }
-
-        lastWeekScreentimes.add(totalScreentime);
+        print("screentime ${totalScreentime.inMinutes} ");
+        lastWeekScreentime[6-i] = totalScreentime.inMinutes;
       } catch (e) {
         print('Error getting usage for $startOfDay - $endOfDay: $e');
-        lastWeekScreentimes.add(Duration.zero);
+        lastWeekScreentime.add(0);
       }
     }
-
-    for (int i = 0; i < lastWeekScreentimes.length; i++) {
-      lastWeekScreentime[i] = lastWeekScreentimes[i].inMinutes;
-    }
-
-    // Calculate userScreentime as the sum of the last 7 days
+    // Calculate userScreentime as the screentime today.
     userScreentime = lastWeekScreentime[6];
   }
 
@@ -166,7 +163,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
 
   int get weeklyAverage {
     int total = lastWeekScreentime.fold(0, (sum, val) => sum + val);
-    return (total / 7).round();
+    return ((total - userScreentime) / 6).round();
   }
 
   int loop6(int i) {
@@ -314,7 +311,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Your Screentime: ${formatMinutes(userScreentime)}',
+                        'Your Screentime Today: ${formatMinutes(userScreentime)}',
                         style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255), fontSize: 16),
                       ),
                       Text(
@@ -343,7 +340,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
                               touchTooltipData: BarTouchTooltipData(
                                 getTooltipItem: (group, groupIndex, rod, rodIndex) {
                                   return BarTooltipItem(
-                                    '${weekdays[group.x]}: ${formatMinutes(rod.toY.toInt())}',
+                                    '${weekdays[loop6(group.x + _day)]}: ${formatMinutes(rod.toY.toInt())}',
                                     const TextStyle(color: Colors.white),
                                   );
                                 },
