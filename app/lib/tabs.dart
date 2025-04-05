@@ -1,5 +1,6 @@
 import 'package:app/Permissions.dart';
 import 'package:app/blocking.dart';
+import 'package:app/rulesPage.dart';
 import 'package:flutter/material.dart';
 import 'AppUsage.dart';
 import 'blockInfo.dart';
@@ -17,7 +18,7 @@ class _TabsState extends State<Tabs> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -53,6 +54,7 @@ class _TabsState extends State<Tabs> with SingleTickerProviderStateMixin {
             AppUsageApp(),
             PermissionsTab(),
             Blocking(),
+            RulesPage(),
             BlockInfo(title: 'Block Info Placeholder'),
           ],
         ),
@@ -70,6 +72,7 @@ class _TabsState extends State<Tabs> with SingleTickerProviderStateMixin {
               Tab(icon: Icon(Icons.bar_chart)),
               Tab(icon: Icon(Icons.warning_amber_outlined)),
               Tab(icon: Icon(Icons.shield_outlined)),
+              Tab(icon: Icon(Icons.handshake)),
               Tab(icon: Icon(Icons.block)),
             ],
           ),
