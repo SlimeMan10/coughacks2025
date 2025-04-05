@@ -1,12 +1,12 @@
 import 'package:app/method_channel.dart';
 import 'package:flutter/material.dart';
 
-class Blocking extends StatefulWidget {
+class RulesPage extends StatefulWidget {
   @override
-  _BlockingState createState() => _BlockingState();
+  _RulesPageState createState() => _RulesPageState();
 }
 
-class _BlockingState extends State<Blocking> {
+class _RulesPageState extends State<RulesPage> {
   @override
   Widget build(BuildContext context) {
 
@@ -32,7 +32,7 @@ class _BlockingState extends State<Blocking> {
       body: Center(
           child: Column(
             children: [
-              Text("Blocking screen"),
+              Text("RulesPage screen"),
               ElevatedButton(
                 onPressed: onPressed,
                 style: ElevatedButton.styleFrom(
