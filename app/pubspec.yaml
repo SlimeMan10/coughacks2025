@@ -37,6 +37,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   app_usage: ^4.0.1
   installed_apps: ^1.6.0
+  permission_handler: ^11.3.1  # Add this
 # Add this to get app icons
 
 dev_dependencies:
