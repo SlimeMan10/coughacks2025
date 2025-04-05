@@ -3,6 +3,7 @@ import 'package:app_usage/app_usage.dart';
 import 'package:installed_apps/installed_apps.dart';
 import 'package:installed_apps/app_info.dart';
 import 'package:flutter/services.dart';
+import 'package:swipe_cards/swipe_cards.dart';
 
 const platform = MethodChannel('com.hugh.coughacks/permissions');
 
@@ -29,10 +30,11 @@ class PermissionsTab extends StatefulWidget {
 class _PermissionsTabState extends State<PermissionsTab> {
   Map<String, List<AppInfo>> permissionsToApps = {};
   Map<String, List<String>> appToPermissions = {};
-  int totalApps = 0;
-  int permissionsWithApps = 0;
-  int appsWithPermissions = 0;
+  List<Map<String, dynamic>> permissionCards = [];
+  List<SwipeItem> swipeItems = [];
+  MatchEngine? matchEngine;
   bool _isLoading = false;
+  bool _isReviewing = false; // To toggle between overview and card view
 
   static const List<String> dangerousPermissions = [
     "android.permission.READ_CONTACTS",
@@ -137,17 +139,10 @@ class _PermissionsTabState extends State<PermissionsTab> {
 
   Future<void> _loadPermissionsData() async {
     if (_isLoading) return;
-
     setState(() => _isLoading = true);
 
     try {
-      final List<AppInfo> installedApps = await InstalledApps.getInstalledApps(
-        false,
-        true,
-        "",
-      );
-      totalApps = installedApps.length;
-
+      final List<AppInfo> installedApps = await InstalledApps.getInstalledApps(false, true, "");
       final Map<String, List<AppInfo>> tempPermissionsToApps = {};
       final Map<String, List<String>> tempAppToPermissions = {};
 
@@ -162,11 +157,44 @@ class _PermissionsTabState extends State<PermissionsTab> {
         }
       }
 
+      // Build the list of app-permission pairs
+      permissionCards = [];
+      for (var permission in dangerousPermissions) {
+        List<AppInfo> apps = tempPermissionsToApps[permission] ?? [];
+        for (var app in apps) {
+          permissionCards.add({
+            'app': app,
+            'permission': permission,
+          });
+        }
+      }
+      permissionCards.shuffle();
+
+      // Create swipe items
+      swipeItems = permissionCards.map((card) {
+        AppInfo app = card['app'];
+        String permission = card['permission'];
+        return SwipeItem(
+          content: _buildCardContent(app, permission),
+          likeAction: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Accepted ${app.name} - ${permissionNames[permission]}"),
+                backgroundColor: Colors.green,
+              ),
+            );
+          },
+          nopeAction: () {
+            InstalledApps.openSettings(app.packageName);
+          },
+        );
+      }).toList();
+
+      matchEngine = MatchEngine(swipeItems: swipeItems);
+
       setState(() {
         permissionsToApps = tempPermissionsToApps;
         appToPermissions = tempAppToPermissions;
-        permissionsWithApps = permissionsToApps.values.where((list) => list.isNotEmpty).length;
-        appsWithPermissions = appToPermissions.length;
         _isLoading = false;
       });
     } catch (e) {
@@ -175,18 +203,95 @@ class _PermissionsTabState extends State<PermissionsTab> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Failed to load permissions data"),
+            content: const Text("Failed to load permissions data"),
             backgroundColor: Colors.redAccent,
             action: SnackBarAction(
-            label: 'Retry',
-            onPressed: () {
-              _loadPermissionsData(); // This is correct - void function that calls Future
-            },
-          ),
+              label: 'Retry',
+              onPressed: _loadPermissionsData,
+            ),
           ),
         );
       }
     }
+  }
+
+  Widget _buildCardContent(AppInfo app, String permission) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (app.icon != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.memory(app.icon!, width: 100, height: 100),
+            )
+          else
+            const Icon(Icons.android, size: 100, color: Colors.grey),
+          const SizedBox(height: 16),
+          Text(
+            app.name,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          Icon(
+            permissionIcons[permission],
+            size: 50,
+            color: permissionColors[permission],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            "Needs ${permissionNames[permission]}",
+            style: const TextStyle(fontSize: 18, color: Colors.black54),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              permissionRisks[permission] ?? "Unknown risk",
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            "Does ${app.name} need this permission?",
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.arrow_back, color: Colors.red.withOpacity(0.7)),
+              const SizedBox(width: 8),
+              const Text("Swipe Left: Settings", style: TextStyle(color: Colors.red)),
+              const SizedBox(width: 24),
+              const Text("Swipe Right: Accept", style: TextStyle(color: Colors.green)),
+              const SizedBox(width: 8),
+              Icon(Icons.arrow_forward, color: Colors.green.withOpacity(0.7)),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -195,62 +300,108 @@ class _PermissionsTabState extends State<PermissionsTab> {
       backgroundColor: const Color(0xFF1A1A1A),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.blueAccent))
-          : CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Permission Insights",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
+          : Column(
+              children: [
+                // Header with a button to start reviewing
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Permission Insights",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(Icons.shield, color: Colors.blueAccent, size: 16),
-                            const SizedBox(width: 8),
-                            Text(
-                              "Monitoring ${dangerousPermissions.length} permissions",
-                              style: TextStyle(color: Colors.grey[400]),
-                            ),
-                          ],
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() => _isReviewing = !_isReviewing);
+                        },
+                        icon: const Icon(Icons.card_membership),
+                        label: Text(_isReviewing ? "Back" : "Review Permissions"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        Row(
-                          children: [
-                            Icon(Icons.warning, color: Colors.orange, size: 16),
-                            const SizedBox(width: 8),
-                            Text(
-                              "$permissionsWithApps permissions used by apps",
-                              style: TextStyle(color: Colors.grey[400]),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Icon(Icons.apps, color: Colors.green, size: 16),
-                            const SizedBox(width: 8),
-                            Text(
-                              "$appsWithPermissions apps using dangerous permissions",
-                              style: TextStyle(color: Colors.grey[400]),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) => _buildPermissionSection(dangerousPermissions[index]),
-                    childCount: dangerousPermissions.length,
-                  ),
+                Expanded(
+                  child: _isReviewing
+                      ? (swipeItems.isEmpty
+                          ? const Center(
+                              child: Text(
+                                "No permissions to review",
+                                style: TextStyle(color: Colors.white, fontSize: 18),
+                              ),
+                            )
+                          : SwipeCards(
+                              matchEngine: matchEngine!,
+                              itemBuilder: (context, index) => swipeItems[index].content,
+                              onStackFinished: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("All permissions reviewed!"),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                                setState(() => _isReviewing = false);
+                              },
+                            ))
+                      : CustomScrollView(
+                          slivers: [
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.shield, color: Colors.blueAccent, size: 16),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          "Monitoring ${dangerousPermissions.length} permissions",
+                                          style: TextStyle(color: Colors.grey[400]),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.warning, color: Colors.orange, size: 16),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          "${permissionsToApps.length} permissions used by apps",
+                                          style: TextStyle(color: Colors.grey[400]),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.apps, color: Colors.green, size: 16),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          "${appToPermissions.length} apps using dangerous permissions",
+                                          style: TextStyle(color: Colors.grey[400]),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) => _buildPermissionSection(dangerousPermissions[index]),
+                                childCount: dangerousPermissions.length,
+                              ),
+                            ),
+                          ],
+                        ),
                 ),
               ],
             ),
@@ -260,7 +411,9 @@ class _PermissionsTabState extends State<PermissionsTab> {
   Widget _buildPermissionSection(String permission) {
     final apps = permissionsToApps[permission] ?? [];
     final hasApps = apps.isNotEmpty;
-    final percentage = totalApps > 0 ? (apps.length / totalApps * 100).toStringAsFixed(1) : "0.0";
+    final percentage = appToPermissions.isNotEmpty
+        ? (apps.length / appToPermissions.length * 100).toStringAsFixed(1)
+        : "0.0";
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
