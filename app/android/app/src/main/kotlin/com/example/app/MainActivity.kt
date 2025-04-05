@@ -5,6 +5,7 @@ import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import android.content.pm.PackageManager
+import android.content.Intent
 
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "com.example.app/permissions"
@@ -24,6 +25,39 @@ class MainActivity: FlutterActivity() {
                 result.notImplemented()
             }
         }
+        
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, AppMonitorService.CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "monitorApp" -> {
+                    val packageName = call.argument<String>("packageName")
+                    if (packageName != null) {
+                        AppMonitorService.monitoredApps.add(packageName)
+                        result.success(true)
+                    } else {
+                        result.error("INVALID_ARGUMENT", "Package name is required", null)
+                    }
+                }
+                "stopMonitoringApp" -> {
+                    val packageName = call.argument<String>("packageName")
+                    if (packageName != null) {
+                        AppMonitorService.monitoredApps.remove(packageName)
+                        result.success(true)
+                    } else {
+                        result.error("INVALID_ARGUMENT", "Package name is required", null)
+                    }
+                }
+                "openAccessibilitySettings" -> {
+                    val intent = Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                    startActivity(intent)
+                    result.success(null)
+                }
+                else -> {
+                    result.notImplemented()
+                }
+            }
+        }
+        
+        AppMonitorReceiver.methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, AppMonitorService.CHANNEL)
     }
 
     private fun getPermissions(packageName: String): List<String> {
