@@ -34,7 +34,7 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
   List<SwipeItem> swipeItems = [];
   MatchEngine? matchEngine;
   bool _isLoading = false;
-  bool _isReviewing = false; // To toggle between overview and card view
+  bool _isReviewing = false;
 
   static const List<String> dangerousPermissions = [
     "android.permission.READ_CONTACTS",
@@ -113,26 +113,26 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
   };
 
   static const Map<String, Color> permissionColors = {
-    "android.permission.READ_CONTACTS": Colors.black87,
-    "android.permission.WRITE_CONTACTS": Colors.black87,
-    "android.permission.ACCESS_FINE_LOCATION": Colors.black87,
-    "android.permission.ACCESS_COARSE_LOCATION": Colors.black87,
-    "android.permission.CAMERA": Colors.black87,
-    "android.permission.RECORD_AUDIO": Colors.black87,
-    "android.permission.READ_SMS": Colors.black87,
-    "android.permission.SEND_SMS": Colors.black87,
-    "android.permission.READ_PHONE_STATE": Colors.black87,
-    "android.permission.CALL_PHONE": Colors.black87,
-    "android.permission.READ_EXTERNAL_STORAGE": Colors.black87,
-    "android.permission.WRITE_EXTERNAL_STORAGE": Colors.black87,
-    "android.permission.GET_ACCOUNTS": Colors.black87,
-    "android.permission.BODY_SENSORS": Colors.black87,
-    "android.permission.READ_CALENDAR": Colors.black87,
-    "android.permission.WRITE_CALENDAR": Colors.black87,
+    "android.permission.READ_CONTACTS": Colors.purple,
+    "android.permission.WRITE_CONTACTS": Colors.purple,
+    "android.permission.ACCESS_FINE_LOCATION": Colors.blue,
+    "android.permission.ACCESS_COARSE_LOCATION": Colors.blue,
+    "android.permission.CAMERA": Colors.red,
+    "android.permission.RECORD_AUDIO": Colors.orange,
+    "android.permission.READ_SMS": Colors.green,
+    "android.permission.SEND_SMS": Colors.green,
+    "android.permission.READ_PHONE_STATE": Colors.yellow,
+    "android.permission.CALL_PHONE": Colors.yellow,
+    "android.permission.READ_EXTERNAL_STORAGE": Colors.cyan,
+    "android.permission.WRITE_EXTERNAL_STORAGE": Colors.cyan,
+    "android.permission.GET_ACCOUNTS": Colors.pink,
+    "android.permission.BODY_SENSORS": Colors.brown,
+    "android.permission.READ_CALENDAR": Colors.teal,
+    "android.permission.WRITE_CALENDAR": Colors.teal,
   };
 
   @override
-  bool get wantKeepAlive => true; // Preserve state when switching tabs
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -160,7 +160,6 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
         }
       }
 
-      // Build the list of app-permission pairs
       permissionCards = [];
       for (var permission in dangerousPermissions) {
         List<AppInfo> apps = tempPermissionsToApps[permission] ?? [];
@@ -173,7 +172,6 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
       }
       permissionCards.shuffle();
 
-      // Create swipe items
       swipeItems = permissionCards.map((card) {
         AppInfo app = card['app'];
         String permission = card['permission'];
@@ -207,9 +205,10 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text("Failed to load permissions data"),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: Colors.red,
             action: SnackBarAction(
               label: 'Retry',
+              textColor: Colors.white,
               onPressed: _loadPermissionsData,
             ),
           ),
@@ -220,226 +219,161 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
 
   Widget _buildCardContent(AppInfo app, String permission) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300, width: 1),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (app.icon != null)
             ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.memory(app.icon!, width: 80, height: 80),
+              borderRadius: BorderRadius.circular(12),
+              child: Image.memory(app.icon!, width: 100, height: 100),
             )
           else
             Container(
-              width: 80,
-              height: 80,
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(8),
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.android, size: 50, color: Colors.black87),
+              child: const Icon(Icons.android, size: 60, color: Colors.grey),
             ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Text(
             app.name,
             style: const TextStyle(
-              fontSize: 20,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: Colors.black87,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade400, width: 1),
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   permissionIcons[permission],
-                  size: 18,
-                  color: Colors.black87,
+                  size: 32,
+                  color: permissionColors[permission],
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 Text(
                   permissionNames[permission] ?? "Unknown",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: permissionColors[permission],
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            permissionRisks[permission] ?? "Unknown risk",
-            style: const TextStyle(fontSize: 14, color: Colors.black54),
-            textAlign: TextAlign.center,
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              permissionRisks[permission] ?? "Unknown risk",
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              textAlign: TextAlign.center,
+            ),
           ),
           const SizedBox(height: 24),
+          Text(
+            "Does ${app.name} need this permission?",
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black54,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildActionButton(
-                onTap: () {
-                  InstalledApps.openSettings(app.packageName);
-                },
-                text: "Settings",
-                icon: Icons.settings,
-                isNegative: true,
-              ),
-              _buildActionButton(
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("Accepted ${app.name} - ${permissionNames[permission]}"),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                },
-                text: "Allow",
-                icon: Icons.check,
-                isNegative: false,
-              ),
+              Icon(Icons.arrow_back, color: Colors.red.withOpacity(0.8), size: 28),
+              const SizedBox(width: 8),
+              const Text("Swipe Left: Settings", style: TextStyle(color: Colors.red, fontSize: 14)),
+              const SizedBox(width: 24),
+              const Text("Swipe Right: Accept", style: TextStyle(color: Colors.green, fontSize: 14)),
+              const SizedBox(width: 8),
+              Icon(Icons.arrow_forward, color: Colors.green.withOpacity(0.8), size: 28),
             ],
           ),
         ],
       ),
     );
   }
-  
-  Widget _buildActionButton({
-    required VoidCallback onTap, 
-    required String text, 
-    required IconData icon,
-    required bool isNegative,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isNegative ? Colors.grey.shade100 : Colors.black,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isNegative ? Colors.grey.shade400 : Colors.black,
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: isNegative ? Colors.black : Colors.white,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              text,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: isNegative ? Colors.black : Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    super.build(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
-          'Review Permissions',
+          'Permissions',
           style: TextStyle(
-            color: Colors.black,
-            fontSize: 32,
+            color: Colors.black87,
+            fontSize: 28,
             fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
-          _isReviewing 
-            ? IconButton(
-                icon: const Icon(Icons.close, color: Colors.black),
-                onPressed: () {
-                  setState(() => _isReviewing = false);
-                },
-              )
-            : IconButton(
-                icon: const Icon(Icons.filter_list, color: Colors.black),
-                onPressed: () {
-                  setState(() => _isReviewing = true);
-                },
-              ),
+          IconButton(
+            icon: Icon(_isReviewing ? Icons.close : Icons.swipe, color: Colors.black87),
+            onPressed: () {
+              setState(() => _isReviewing = !_isReviewing);
+            },
+          ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.black))
+          ? const Center(child: CircularProgressIndicator(color: Colors.blue))
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header section
                 Padding(
-                  padding: const EdgeInsets.only(left: 16, top: 8, bottom: 16),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.expand_more, color: Colors.grey),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Permission overview',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // Stats row
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Row(
                     children: [
                       _buildStatBadge(
                         count: dangerousPermissions.length,
                         label: "permissions tracked",
-                        icon: Icons.shield_outlined,
+                        icon: Icons.shield,
+                        color: Colors.blue,
                       ),
                       const SizedBox(width: 12),
                       _buildStatBadge(
                         count: appToPermissions.length,
-                        label: "apps with permissions",
+                        label: "apps monitored",
                         icon: Icons.apps,
+                        color: Colors.green,
                       ),
                     ],
                   ),
                 ),
-                
-                const SizedBox(height: 16),
-                
-                // Main content
                 Expanded(
                   child: _isReviewing
                       ? (swipeItems.isEmpty
@@ -451,15 +385,15 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text("All permissions reviewed!"),
-                                    backgroundColor: Colors.black,
+                                    backgroundColor: Colors.green,
                                   ),
                                 );
                                 setState(() => _isReviewing = false);
                               },
                             ))
                       : ListView.builder(
+                          padding: const EdgeInsets.all(16),
                           itemCount: dangerousPermissions.length,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           itemBuilder: (context, index) => _buildPermissionSection(dangerousPermissions[index]),
                         ),
                 ),
@@ -467,26 +401,31 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
             ),
     );
   }
-  
-  Widget _buildStatBadge({required int count, required String label, required IconData icon}) {
+
+  Widget _buildStatBadge({required int count, required String label, required IconData icon, required Color color}) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey.shade300),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade300),
               ),
-              child: Icon(icon, size: 20, color: Colors.black87),
+              child: Icon(icon, size: 20, color: color),
             ),
             const SizedBox(width: 12),
             Column(
@@ -497,14 +436,14 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: Colors.black87,
                   ),
                 ),
                 Text(
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey.shade700,
+                    color: Colors.grey[600],
                   ),
                 ),
               ],
@@ -524,26 +463,26 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: Colors.grey[200],
               borderRadius: BorderRadius.circular(40),
             ),
-            child: const Icon(Icons.check_circle_outline, size: 40, color: Colors.black87),
+            child: const Icon(Icons.check_circle, size: 48, color: Colors.green),
           ),
           const SizedBox(height: 16),
           const Text(
-            "No permissions to review",
+            "All Clear!",
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: Colors.black87,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            "All your permissions are in order",
+            "No permissions to review",
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey.shade600,
+              color: Colors.grey[600],
             ),
           ),
           const SizedBox(height: 24),
@@ -552,14 +491,11 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
               setState(() => _isReviewing = false);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              backgroundColor: Colors.blue,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            child: const Text("Back to Overview"),
+            child: const Text("Back to Overview", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -574,26 +510,32 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
         : "0.0";
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           leading: Container(
-            width: 32,
-            height: 32,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: (permissionColors[permission] ?? Colors.grey).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               permissionIcons[permission],
-              size: 18, 
-              color: Colors.black87
+              size: 24,
+              color: permissionColors[permission],
             ),
           ),
           title: Text(
@@ -601,7 +543,7 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: Colors.black87,
             ),
           ),
           subtitle: Column(
@@ -609,37 +551,34 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
             children: [
               const SizedBox(height: 4),
               Text(
-                hasApps ? "${apps.length} apps" : "No apps",
+                hasApps ? "${apps.length} apps ($percentage%)" : "No apps",
                 style: TextStyle(
-                  color: hasApps ? Colors.red.shade800 : Colors.green.shade800,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
+                  color: hasApps ? Colors.red : Colors.green,
+                  fontSize: 14,
                 ),
               ),
             ],
           ),
-          trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+          trailing: Icon(Icons.chevron_right, color: Colors.grey[600]),
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(16),
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       permissionRisks[permission] ?? "Unknown risk",
-                      style: TextStyle(color: Colors.grey.shade800, fontSize: 14),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  hasApps 
-                      ? _buildAppsSimplifiedList(apps, permission) 
-                      : _buildSafeMessage(permission),
+                  hasApps ? _buildAppsList(apps, permission) : _buildSafeMessage(permission),
                 ],
               ),
             ),
@@ -649,15 +588,15 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
     );
   }
 
-  Widget _buildAppsSimplifiedList(List<AppInfo> apps, String permission) {
+  Widget _buildAppsList(List<AppInfo> apps, String permission) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           "Apps with Access",
           style: TextStyle(
-            color: Colors.grey.shade800,
-            fontSize: 14,
+            color: Colors.black87,
+            fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -666,8 +605,8 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: apps.length,
-          separatorBuilder: (context, index) => Divider(color: Colors.grey.shade200),
-          itemBuilder: (context, index) => _buildAppSimplifiedTile(apps[index], permission),
+          separatorBuilder: (context, index) => Divider(color: Colors.grey[200]),
+          itemBuilder: (context, index) => _buildAppTile(apps[index], permission),
         ),
         const SizedBox(height: 12),
         ElevatedButton(
@@ -675,20 +614,17 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
             setState(() => _isReviewing = true);
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.black,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+            backgroundColor: Colors.blue,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
-          child: const Text("Review All"),
+          child: const Text("Review All", style: TextStyle(color: Colors.white)),
         ),
       ],
     );
   }
 
-  Widget _buildAppSimplifiedTile(AppInfo app, String permission) {
+  Widget _buildAppTile(AppInfo app, String permission) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -696,16 +632,16 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
           app.icon != null
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.memory(app.icon!, width: 40, height: 40),
+                  child: Image.memory(app.icon!, width: 48, height: 48),
                 )
               : Container(
-                  width: 40,
-                  height: 40,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
+                    color: Colors.grey[200],
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.android, size: 24, color: Colors.black87),
+                  child: const Icon(Icons.android, size: 28, color: Colors.grey),
                 ),
           const SizedBox(width: 12),
           Expanded(
@@ -718,7 +654,7 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.black54),
+            icon: Icon(Icons.settings, color: Colors.grey[600]),
             onPressed: () => InstalledApps.openSettings(app.packageName),
           ),
         ],
@@ -733,16 +669,16 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
+            color: Colors.grey[200],
             borderRadius: BorderRadius.circular(24),
           ),
-          child: const Icon(Icons.check_circle_outlined, size: 28, color: Colors.green),
+          child: const Icon(Icons.check_circle, size: 28, color: Colors.green),
         ),
         const SizedBox(height: 12),
         Text(
           "No apps using ${permissionNames[permission]}",
           style: const TextStyle(
-            color: Colors.black87, 
+            color: Colors.black87,
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
