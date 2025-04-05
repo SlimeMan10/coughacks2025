@@ -149,6 +149,40 @@ class Rule {
   }
 }
 
+
+bool isAppBlocked(String app) {
+  final currentTime = Rule.getCurrentTimeOfDay();
+  final currentDay = Rule.getCurrentDayOfWeek();
+
+  String timeToString(TimeOfDay time) {
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  print("Checking if app '$app' is blocked at ${timeToString(currentTime)} on $currentDay");
+
+  for (final rule in dummyRules) {
+    if (rule.isActiveNow()) {
+      print("Rule '${rule.name}' is active now.");
+
+      if (rule.blockedApps.contains("All") || rule.blockedApps.contains(app)) {
+        print("App '$app' is blocked by rule '${rule.name}'");
+        return true;
+      } else {
+        print("App '$app' is NOT blocked by rule '${rule.name}'");
+      }
+    } else {
+      print("Rule '${rule.name}' is not active now.");
+    }
+  }
+
+  print("App '$app' is not currently blocked.");
+  return false;
+}
+
+
+
+
+
 // List of dummy rules for testing
 List<Rule> dummyRules = [
   Rule(
@@ -191,7 +225,7 @@ List<Rule> dummyRules = [
       "Facebook", 
       "Twitter", 
       "YouTube", 
-      "Netflix", 
+      "gmail", 
       "Reddit"
     ],
     isAllDay: true,
@@ -203,6 +237,26 @@ List<Rule> dummyRules = [
     name: "Digital Detox 2",
     blockedApps: [
       "com.android.chrome", 
+      "com.google.android.youtube"
+    ],
+    isAllDay: true,
+    applicableDays: [
+      DayOfWeek.Monday,
+      DayOfWeek.Tuesday,
+      DayOfWeek.Wednesday,
+      DayOfWeek.Thursday,
+      DayOfWeek.Friday,
+      DayOfWeek.Saturday,
+      DayOfWeek.Sunday
+    ],
+    isStrict: true,
+  ),
+
+  Rule(
+    name: "Digital Detox 2",
+    blockedApps: [
+      "com.android.chrome", 
+      "com.google.android.youtube"
     ],
     isAllDay: true,
     applicableDays: [
