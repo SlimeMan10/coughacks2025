@@ -1,9 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:app_usage/app_usage.dart';
 import 'package:installed_apps/installed_apps.dart';
 import 'package:installed_apps/app_info.dart';
 import 'package:intl/intl.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:path_provider/path_provider.dart';
+import 'shareScreenshot.dart';
 
 void main() {
   runApp(const MaterialApp(
@@ -37,7 +41,8 @@ class AppUsageApp extends StatefulWidget {
   AppUsageAppState createState() => AppUsageAppState();
 }
 
-class AppUsageAppState extends State<AppUsageApp> with AutomaticKeepAliveClientMixin {
+class AppUsageAppState extends State<AppUsageApp>
+    with AutomaticKeepAliveClientMixin {
   List<AppUsageInfo> _infos = [];
   Map<String, AppInfo> _appMap = {};
   Map<String, dynamic> _insights = {};
@@ -86,10 +91,13 @@ class AppUsageAppState extends State<AppUsageApp> with AutomaticKeepAliveClientM
     _updateDateRange(_dateRange);
   }
 
+
   void _updateDateRange(RangeValues range) {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
-    final start = todayStart.subtract(Duration(days: (7 - range.start).floor()));
+    final start = todayStart.subtract(
+      Duration(days: (7 - range.start).floor()),
+    );
     final end = todayStart.subtract(Duration(days: (7 - range.end).floor()));
     _startDate = DateTime(start.year, start.month, start.day, 3);
     _endDate = DateTime(end.year, end.month, end.day, now.hour, now.minute, now.second);
@@ -105,8 +113,15 @@ class AppUsageAppState extends State<AppUsageApp> with AutomaticKeepAliveClientM
     });
 
     try {
-      List<AppUsageInfo> infoList = await AppUsage().getAppUsage(_startDate, _endDate);
-      List<AppInfo> installedApps = await InstalledApps.getInstalledApps(false, true, "");
+      List<AppUsageInfo> infoList = await AppUsage().getAppUsage(
+        _startDate,
+        _endDate,
+      );
+      List<AppInfo> installedApps = await InstalledApps.getInstalledApps(
+        false,
+        true,
+        "",
+      );
       _appMap = {for (var app in installedApps) app.packageName: app};
 
       infoList.removeWhere((info) => info.usage.inSeconds <= 0);
@@ -225,7 +240,8 @@ class AppUsageAppState extends State<AppUsageApp> with AutomaticKeepAliveClientM
   Widget build(BuildContext context) {
     super.build(context);
     final DateFormat formatter = DateFormat('MMM d, HH:mm');
-    final String timeRangeString = "${formatter.format(_startDate)} - ${formatter.format(_endDate)}";
+    final String timeRangeString =
+        "${formatter.format(_startDate)} - ${formatter.format(_endDate)}";
 
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
@@ -258,7 +274,10 @@ class AppUsageAppState extends State<AppUsageApp> with AutomaticKeepAliveClientM
                       ? Center(
                           child: Text(
                             _error!,
-                            style: const TextStyle(color: Colors.redAccent, fontSize: 15),
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 15,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         )
@@ -317,7 +336,11 @@ class AppUsageAppState extends State<AppUsageApp> with AutomaticKeepAliveClientM
           percent: usagePercentage > 1 ? 1 : usagePercentage,
           center: Text(
             formatDuration(totalUsage),
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
           ),
           progressColor: Colors.blueAccent,
           backgroundColor: Colors.white12,
@@ -373,19 +396,24 @@ class AppUsageAppState extends State<AppUsageApp> with AutomaticKeepAliveClientM
       spacing: 8.0,
       runSpacing: 8.0,
       alignment: WrapAlignment.center,
-      children: breakdown.entries.map((entry) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: Colors.white10,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            "${entry.key}: ${formatDuration(entry.value)}",
-            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w400),
-          ),
-        );
-      }).toList(),
+      children:
+          breakdown.entries.map((entry) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.white10,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                "${entry.key}: ${formatDuration(entry.value)}",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            );
+          }).toList(),
     );
   }
 
@@ -395,7 +423,10 @@ class AppUsageAppState extends State<AppUsageApp> with AutomaticKeepAliveClientM
       child: Column(
         children: [
           const SizedBox(height: 8),
-          const Text('Select Date Range (Last 7 days)', style: TextStyle(color: Colors.white70, fontSize: 12)),
+          const Text(
+            'Select Date Range (Last 7 days)',
+            style: TextStyle(color: Colors.white70, fontSize: 12),
+          ),
           RangeSlider(
             min: 0,
             max: 7,
@@ -405,7 +436,9 @@ class AppUsageAppState extends State<AppUsageApp> with AutomaticKeepAliveClientM
             inactiveColor: Colors.white24,
             labels: RangeLabels(
               "${7 - _dateRange.start.toInt()}d ago",
-              _dateRange.end.toInt() == 7 ? "Now" : "${7 - _dateRange.end.toInt()}d ago",
+              _dateRange.end.toInt() == 7
+                  ? "Now"
+                  : "${7 - _dateRange.end.toInt()}d ago",
             ),
             onChanged: (values) {
               if ((values.end - values.start) <= 7) {
