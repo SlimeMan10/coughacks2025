@@ -1,37 +1,29 @@
 import 'package:flutter/material.dart';
-import 'main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Rule.dart';
 import 'database/ruleDatabase.dart';
 import 'database/RuleStorageTestUtil.dart';
 
-// Parent StatefulWidget class
 class BlockInfo extends StatefulWidget {
   final String title = "Block Info";
-  
+
   const BlockInfo() : super();
-  
+
   @override
   _BlockInfoState createState() => _BlockInfoState();
 }
 
 class _BlockInfoState extends State<BlockInfo> {
-  // Time limits in minutes
-  int _dailyTimeLimit = 120; // 2 hours default
-  TimeOfDay _startTime = TimeOfDay(hour: 22, minute: 0); // 10:00 PM
-  TimeOfDay _endTime = TimeOfDay(hour: 9, minute: 0); // 9:00 AM
-  
-  // Days of week selection
+  int _dailyTimeLimit = 120;
+  TimeOfDay _startTime = TimeOfDay(hour: 22, minute: 0);
+  TimeOfDay _endTime = TimeOfDay(hour: 9, minute: 0);
+
   final List<String> _weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   List<bool> _selectedDays = [true, true, true, true, true, true, true];
-  
-  // App exceptions list
+
   List<String> _exemptApps = [];
-  
-  // Enable/disable flag
   bool _enableLimits = true;
 
-  // Rule database
   final RuleStorage _ruleStorage = RuleStorage();
 
   List<String> get exemptApps => [..._exemptApps];
@@ -41,34 +33,33 @@ class _BlockInfoState extends State<BlockInfo> {
   Widget build(BuildContext context) {
     return Theme(
       data: ThemeData.dark().copyWith(
-        primaryColor: Colors.purple,
-        scaffoldBackgroundColor: Colors.black,
+        scaffoldBackgroundColor: const Color(0xFF1E1E1E),
         colorScheme: const ColorScheme.dark(
-          primary: Colors.purpleAccent,
-          secondary: Colors.amber,
-          surface: Colors.black,
-          background: Colors.black,
+          primary: Color(0xFF1976D2), // Darker Blue
+          secondary: Color(0xFFB0BEC5), // Light Gray
+          surface: Color(0xFF282828),
+          background: Color(0xFF1E1E1E),
         ),
-        cardColor: const Color(0xFF121212),
+        cardColor: const Color(0xFF282828),
         dividerColor: Colors.grey[800],
         sliderTheme: SliderThemeData(
-          activeTrackColor: Colors.purpleAccent,
-          thumbColor: Colors.amber,
+          activeTrackColor: const Color(0xFF1976D2),
+          thumbColor: const Color(0xFFB0BEC5),
           inactiveTrackColor: Colors.grey[800],
-          overlayColor: Colors.purpleAccent.withOpacity(0.2),
+          overlayColor: const Color(0xFF1976D2).withOpacity(0.2),
           thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
           overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
         ),
         switchTheme: SwitchThemeData(
           thumbColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
             if (states.contains(MaterialState.selected)) {
-              return Colors.amber;
+              return const Color(0xFFB0BEC5);
             }
             return Colors.grey;
           }),
           trackColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
             if (states.contains(MaterialState.selected)) {
-              return Colors.purpleAccent.withOpacity(0.5);
+              return const Color(0xFF1976D2).withOpacity(0.5);
             }
             return Colors.grey[700]!;
           }),
@@ -79,16 +70,18 @@ class _BlockInfoState extends State<BlockInfo> {
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.purpleAccent,
+            backgroundColor: const Color(0xFF1976D2),
             foregroundColor: Colors.white,
           ),
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1E1E1E),
+          elevation: 0,
         ),
       ),
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.black,
           title: Text(widget.title),
-          elevation: 0,
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
@@ -98,32 +91,31 @@ class _BlockInfoState extends State<BlockInfo> {
               Container(
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[900],
+                  color: const Color(0xFF282828),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.purpleAccent.withOpacity(0.3), width: 1),
+                  border: Border.all(color: const Color(0xFF1976D2).withOpacity(0.3), width: 1),
                 ),
                 child: SwitchListTile(
-                  title: const Text('Enable Screen Time Limits', 
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  title: const Text('Enable Screen Time Limits',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   value: _enableLimits,
                   onChanged: (bool value) {
                     setState(() {
                       _enableLimits = value;
                     });
                   },
-                  activeColor: Colors.amber,
-                  activeTrackColor: Colors.purpleAccent,
+                  activeColor: const Color(0xFFB0BEC5),
+                  activeTrackColor: const Color(0xFF1976D2),
                 ),
               ),
-              
-              if (_enableLimits) ... [
+              if (_enableLimits) ...[
                 _buildSectionTitle('Daily Screen Time Limit'),
                 Container(
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[900],
+                    color: const Color(0xFF282828),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.purpleAccent.withOpacity(0.3), width: 1),
+                    border: Border.all(color: const Color(0xFF1976D2).withOpacity(0.3), width: 1),
                   ),
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -131,35 +123,34 @@ class _BlockInfoState extends State<BlockInfo> {
                       Slider(
                         value: _dailyTimeLimit.toDouble(),
                         min: 15,
-                        max: 480, // 8 hours
-                        divisions: 31, // 15-minute intervals
+                        max: 480,
+                        divisions: 31,
                         label: _formatTimeLimit(_dailyTimeLimit),
                         onChanged: (double value) {
                           setState(() {
                             _dailyTimeLimit = value.round();
                           });
-                        }
+                        },
                       ),
                       Container(
                         margin: const EdgeInsets.only(top: 8),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.purpleAccent.withOpacity(0.2),
+                          color: const Color(0xFF1976D2).withOpacity(0.2),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
                           _formatTimeLimit(_dailyTimeLimit),
                           style: const TextStyle(
-                            fontSize: 18, 
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
-                          )
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-              
                 _buildSectionTitle("Downtime (Blocked Hours)"),
                 Card(
                   elevation: 4,
@@ -178,15 +169,15 @@ class _BlockInfoState extends State<BlockInfo> {
                         ),
                         onTap: () async {
                           TimeOfDay? pickedTime = await showTimePicker(
-                            context: context, 
+                            context: context,
                             initialTime: _startTime,
                             builder: (context, child) {
                               return Theme(
                                 data: ThemeData.dark().copyWith(
                                   colorScheme: const ColorScheme.dark(
-                                    primary: Colors.purpleAccent,
+                                    primary: Color(0xFF1976D2),
                                     onPrimary: Colors.white,
-                                    surface: Color(0xFF1E1E1E),
+                                    surface: Color(0xFF282828),
                                     onSurface: Colors.white,
                                   ),
                                 ),
@@ -214,15 +205,15 @@ class _BlockInfoState extends State<BlockInfo> {
                         ),
                         onTap: () async {
                           TimeOfDay? pickedTime = await showTimePicker(
-                            context: context, 
+                            context: context,
                             initialTime: _endTime,
                             builder: (context, child) {
                               return Theme(
                                 data: ThemeData.dark().copyWith(
                                   colorScheme: const ColorScheme.dark(
-                                    primary: Colors.purpleAccent,
+                                    primary: Color(0xFF1976D2),
                                     onPrimary: Colors.white,
-                                    surface: Color(0xFF1E1E1E),
+                                    surface: Color(0xFF282828),
                                     onSurface: Colors.white,
                                   ),
                                 ),
@@ -235,12 +226,11 @@ class _BlockInfoState extends State<BlockInfo> {
                               _endTime = pickedTime;
                             });
                           }
-                        }
+                        },
                       ),
                     ],
                   ),
                 ),
-                
                 _buildSectionTitle('Apply Limits On:'),
                 Card(
                   elevation: 4,
@@ -250,7 +240,6 @@ class _BlockInfoState extends State<BlockInfo> {
                     child: _buildDaySelector(),
                   ),
                 ),
-                
                 _buildSectionTitle('Always Allowed Apps'),
                 Card(
                   elevation: 4,
@@ -263,7 +252,7 @@ class _BlockInfoState extends State<BlockInfo> {
                         ElevatedButton.icon(
                           icon: const Icon(Icons.add),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.purpleAccent,
+                            backgroundColor: const Color(0xFF1976D2),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -274,22 +263,23 @@ class _BlockInfoState extends State<BlockInfo> {
                           },
                           label: const Text('Select Exempt Apps'),
                         ),
-                        
                         if (_exemptApps.isNotEmpty) ...[
                           const SizedBox(height: 16),
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: _exemptApps.map((app) => Chip(
-                              backgroundColor: Colors.purple[700],
-                              label: Text(app, style: const TextStyle(color: Colors.white)),
-                              deleteIconColor: Colors.white,
-                              onDeleted: () {
-                                setState(() {
-                                  _exemptApps.remove(app);
-                                });
-                              },
-                            )).toList(),
+                            children: _exemptApps
+                                .map((app) => Chip(
+                                      backgroundColor: Colors.blue[700],
+                                      label: Text(app, style: const TextStyle(color: Colors.white)),
+                                      deleteIconColor: Colors.white,
+                                      onDeleted: () {
+                                        setState(() {
+                                          _exemptApps.remove(app);
+                                        });
+                                      },
+                                    ))
+                                .toList(),
                           ),
                         ],
                       ],
@@ -307,7 +297,7 @@ class _BlockInfoState extends State<BlockInfo> {
           tooltip: 'Save',
           icon: const Icon(Icons.save),
           label: const Text('Save'),
-          backgroundColor: Colors.amber,
+          backgroundColor: const Color(0xFFB0BEC5),
           foregroundColor: Colors.black,
         ),
       ),
@@ -320,10 +310,10 @@ class _BlockInfoState extends State<BlockInfo> {
       child: Text(
         title,
         style: const TextStyle(
-          fontSize: 18, 
+          fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Colors.purpleAccent,
-        )
+          color: Color(0xFF1976D2),
+        ),
       ),
     );
   }
@@ -332,7 +322,7 @@ class _BlockInfoState extends State<BlockInfo> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.black,
+        color: const Color(0xFF1E1E1E),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -352,20 +342,16 @@ class _BlockInfoState extends State<BlockInfo> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: Colors.purpleAccent,
+                  color: const Color(0xFF1976D2),
                   width: 2,
                 ),
-                color: _selectedDays[index]
-                    ? Colors.purpleAccent
-                    : Colors.transparent,
+                color: _selectedDays[index] ? const Color(0xFF1976D2) : Colors.transparent,
               ),
               child: Center(
                 child: Text(
                   _weekDays[index],
                   style: TextStyle(
-                    color: _selectedDays[index] 
-                        ? Colors.white 
-                        : Colors.purpleAccent,
+                    color: _selectedDays[index] ? Colors.white : const Color(0xFF1976D2),
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
@@ -389,28 +375,33 @@ class _BlockInfoState extends State<BlockInfo> {
   }
 
   void _showAppSelectionDialog() {
-    // Mock list of apps - in a real app, you would fetch installed apps
     final List<String> availableApps = [
-      'Instagram', 'TikTok', 'YouTube', 'Facebook', 
-      'Twitter', 'Netflix', 'Games', 'Messages'
+      'Instagram',
+      'TikTok',
+      'YouTube',
+      'Facebook',
+      'Twitter',
+      'Netflix',
+      'Games',
+      'Messages'
     ];
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return Theme(
           data: ThemeData.dark().copyWith(
-            dialogBackgroundColor: Colors.black,
+            dialogBackgroundColor: const Color(0xFF1E1E1E),
             colorScheme: const ColorScheme.dark(
-              primary: Colors.purpleAccent,
-              secondary: Colors.amber,
-              surface: Colors.black,
+              primary: Color(0xFF1976D2),
+              secondary: Color(0xFFB0BEC5),
+              surface: Color(0xFF1E1E1E),
               onSurface: Colors.white,
             ),
             checkboxTheme: CheckboxThemeData(
               fillColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
                 if (states.contains(MaterialState.selected)) {
-                  return Colors.purpleAccent;
+                  return const Color(0xFF1976D2);
                 }
                 return Colors.grey;
               }),
@@ -418,8 +409,8 @@ class _BlockInfoState extends State<BlockInfo> {
             ),
           ),
           child: AlertDialog(
-            title: const Text('Select Always Allowed Apps', 
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            title: const Text('Select Always Allowed Apps',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             content: SizedBox(
               width: double.maxFinite,
               child: ListView.builder(
@@ -428,12 +419,12 @@ class _BlockInfoState extends State<BlockInfo> {
                 itemBuilder: (BuildContext context, int index) {
                   final String app = availableApps[index];
                   final bool isSelected = _exemptApps.contains(app);
-                  
+
                   return Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: isSelected ? Colors.purpleAccent : Colors.grey[700]!,
+                        color: isSelected ? const Color(0xFF1976D2) : Colors.grey[700]!,
                         width: 1,
                       ),
                       borderRadius: BorderRadius.circular(8),
@@ -441,7 +432,7 @@ class _BlockInfoState extends State<BlockInfo> {
                     child: CheckboxListTile(
                       title: Text(app, style: const TextStyle(color: Colors.white)),
                       value: isSelected,
-                      activeColor: Colors.purpleAccent,
+                      activeColor: const Color(0xFF1976D2),
                       checkColor: Colors.white,
                       onChanged: (bool? value) {
                         setState(() {
@@ -452,7 +443,7 @@ class _BlockInfoState extends State<BlockInfo> {
                           }
                         });
                         Navigator.pop(context);
-                        _showAppSelectionDialog(); // Reopen dialog with updated selections
+                        _showAppSelectionDialog();
                       },
                     ),
                   );
@@ -462,7 +453,7 @@ class _BlockInfoState extends State<BlockInfo> {
             actions: <Widget>[
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber,
+                  backgroundColor: const Color(0xFFB0BEC5),
                   foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -481,25 +472,19 @@ class _BlockInfoState extends State<BlockInfo> {
   }
 
   Future<void> _saveSettings() async {
-    // Get SharedPreferences instance for local settings
     final prefs = await SharedPreferences.getInstance();
-    
-    // Save all settings to SharedPreferences
+
     await prefs.setInt('dailyTimeLimit', _dailyTimeLimit);
     await prefs.setString('startTimeHour', _startTime.hour.toString());
     await prefs.setString('startTimeMinute', _startTime.minute.toString());
     await prefs.setString('endTimeHour', _endTime.hour.toString());
     await prefs.setString('endTimeMinute', _endTime.minute.toString());
     await prefs.setBool('enableLimits', _enableLimits);
-    
-    // Save selected days (converting List<bool> to List<String>)
-    await prefs.setStringList('selectedDays', 
-      _selectedDays.map((day) => day.toString()).toList());
-    
-    // Save exempt apps
+
+    await prefs.setStringList('selectedDays', _selectedDays.map((day) => day.toString()).toList());
+
     await prefs.setStringList('exemptApps', _exemptApps);
-    
-    // Create a new rule with the current settings
+
     final rule = Rule(
       name: 'screenTimeRule',
       blockedApps: _getAllBlockedApps(),
@@ -509,8 +494,7 @@ class _BlockInfoState extends State<BlockInfo> {
       applicableDays: _getSelectedDaysAsEnum(),
       isStrict: _enableLimits,
     );
-    
-    // Check if rule exists, then update or add
+
     bool success = false;
     try {
       if (await _ruleStorage.ruleExists('screenTimeRule')) {
@@ -518,8 +502,7 @@ class _BlockInfoState extends State<BlockInfo> {
       } else {
         success = await _ruleStorage.addRule(rule);
       }
-      
-      // Run the storage test with the current rule
+
       if (success) {
         final testResults = await RuleStorageTestUtil.testRuleStorage(rule);
         _showTestResultsDialog(testResults);
@@ -528,29 +511,25 @@ class _BlockInfoState extends State<BlockInfo> {
       print('Error saving rule: $e');
       success = false;
     }
-    
-    // Show success message
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(success 
-          ? 'Screen time settings saved' 
-          : 'Error saving settings'),
+        content: Text(success ? 'Screen time settings saved' : 'Error saving settings'),
         duration: const Duration(seconds: 2),
         backgroundColor: success ? Colors.green : Colors.red,
       ),
     );
   }
-  
-  // Show test results in a dialog
+
   void _showTestResultsDialog(String results) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          backgroundColor: Colors.black,
+          backgroundColor: const Color(0xFF1E1E1E),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.purpleAccent, width: 2),
+            side: const BorderSide(color: Color(0xFF1976D2), width: 2),
           ),
           child: Container(
             padding: const EdgeInsets.all(16),
@@ -563,7 +542,7 @@ class _BlockInfoState extends State<BlockInfo> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.purpleAccent,
+                    color: Color(0xFF1976D2),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -592,7 +571,7 @@ class _BlockInfoState extends State<BlockInfo> {
                   alignment: Alignment.centerRight,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber,
+                      backgroundColor: const Color(0xFFB0BEC5),
                       foregroundColor: Colors.black,
                     ),
                     onPressed: () => Navigator.of(context).pop(),
@@ -606,10 +585,10 @@ class _BlockInfoState extends State<BlockInfo> {
       },
     );
   }
-  
+
   List<DayOfWeek> _getSelectedDaysAsEnum() {
     List<DayOfWeek> days = [];
-    
+
     if (_selectedDays[0]) days.add(DayOfWeek.Monday);
     if (_selectedDays[1]) days.add(DayOfWeek.Tuesday);
     if (_selectedDays[2]) days.add(DayOfWeek.Wednesday);
@@ -617,17 +596,22 @@ class _BlockInfoState extends State<BlockInfo> {
     if (_selectedDays[4]) days.add(DayOfWeek.Friday);
     if (_selectedDays[5]) days.add(DayOfWeek.Saturday);
     if (_selectedDays[6]) days.add(DayOfWeek.Sunday);
-    
+
     return days;
   }
-  
+
   List<String> _getAllBlockedApps() {
-    // Mock list of all apps - in a real app, you would fetch installed apps
     final List<String> allApps = [
-      'Instagram', 'TikTok', 'YouTube', 'Facebook', 
-      'Twitter', 'Netflix', 'Games', 'Messages'
+      'Instagram',
+      'TikTok',
+      'YouTube',
+      'Facebook',
+      'Twitter',
+      'Netflix',
+      'Games',
+      'Messages'
     ];
-    
+
     return allApps.where((app) => !_exemptApps.contains(app)).toList();
   }
 }
