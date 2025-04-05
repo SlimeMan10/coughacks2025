@@ -105,43 +105,43 @@ class Rule {
         'applicableDays: ${applicableDays.map((d) => d.toString().split('.').last).join(', ')}, '
         'isStrict: $isStrict}';
   }
-  
+
   // Get current TimeOfDay
   static TimeOfDay getCurrentTimeOfDay() {
     final now = DateTime.now();
     return TimeOfDay(hour: now.hour, minute: now.minute);
   }
-  
+
   // Get current day of week
   static DayOfWeek getCurrentDayOfWeek() {
     final now = DateTime.now();
     // DateTime weekday is 1-7 where 1 is Monday
     return DayOfWeek.values[now.weekday - 1];
   }
-  
+
   // Check if rule is active right now
   bool isActiveNow() {
     final currentDay = getCurrentDayOfWeek();
-    
+
     // Check if rule applies to current day
     if (!applicableDays.contains(currentDay)) {
       return false;
     }
-    
+
     // If it's an all-day rule, it's active
     if (isAllDay) {
       return true;
     }
-    
+
     // Check if current time is within the rule's time range
     final currentTime = getCurrentTimeOfDay();
-    
+
     // Convert times to minutes since midnight for easier comparison
     final currentMinutes = currentTime.hour * 60 + currentTime.minute;
     final startMinutes = startTime!.hour * 60 + startTime!.minute;
     final endMinutes = endTime!.hour * 60 + endTime!.minute;
-    
-    // Handle rules that span across midnight
+
+    // Handle rules that span across midnigh
     if (startMinutes > endMinutes) {
       // e.g., 23:00 to 06:00
       return currentMinutes >= startMinutes || currentMinutes <= endMinutes;

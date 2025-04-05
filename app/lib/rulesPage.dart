@@ -20,7 +20,7 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
   bool _isLoading = true;
   bool _showActiveSessions = true;
   bool _showInactiveSessions = true;
-  
+
   late AnimationController _animationController;
   late Animation<double> _activeIconRotation;
   late Animation<double> _inactiveIconRotation;
@@ -28,13 +28,13 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    
+
     // Set up animation controller
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    
+
     // Set up animations
     _activeIconRotation = Tween<double>(
       begin: 0.0,
@@ -43,7 +43,7 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
-    
+
     _inactiveIconRotation = Tween<double>(
       begin: 0.0,
       end: 0.25,
@@ -51,10 +51,10 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
-    
+
     _loadRules();
   }
-  
+
   @override
   void dispose() {
     _animationController.dispose();
@@ -68,15 +68,15 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
 
     try {
       final rules = await _ruleStorage.getRules();
-      
+
       // Separate rules into active and inactive
       final now = DateTime.now();
       final currentTimeOfDay = TimeOfDay(hour: now.hour, minute: now.minute);
       final currentDayOfWeek = Rule.getCurrentDayOfWeek();
-      
+
       List<Rule> activeRules = [];
       List<Rule> inactiveRules = [];
-      
+
       for (var rule in rules) {
         if (rule.isActiveNow()) {
           activeRules.add(rule);
@@ -84,7 +84,7 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
           inactiveRules.add(rule);
         }
       }
-      
+
       setState(() {
         _rules = rules;
         _activeRules = activeRules;
@@ -102,7 +102,7 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
   void _toggleActiveSection() {
     setState(() {
       _showActiveSessions = !_showActiveSessions;
-      
+
       if (_showActiveSessions) {
         _animationController.reverse();
       } else {
@@ -110,7 +110,7 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
       }
     });
   }
-  
+
   void _toggleInactiveSection() {
     setState(() {
       _showInactiveSessions = !_showInactiveSessions;
@@ -119,7 +119,7 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    void onPressed() async {  
+    void onPressed() async {
       final result = await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => CreateRulePage(),
@@ -138,14 +138,14 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
       final period = time.period == DayPeriod.am ? 'AM' : 'PM';
       return '$hour:${time.minute.toString().padLeft(2, '0')} $period';
     }
-    
+
     // Build a rule card
     Widget _buildRuleCard(Rule rule) {
       final blockedAppsCount = rule.blockedApps.length;
-      final blockedAppsText = rule.blockedApps.contains('All') 
-          ? 'All apps blocked' 
+      final blockedAppsText = rule.blockedApps.contains('All')
+          ? 'All apps blocked'
           : '$blockedAppsCount app${blockedAppsCount == 1 ? '' : 's'} blocked';
-                      
+
       return Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
@@ -172,7 +172,7 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
                         ),
                         child: Icon(
                           rule.isStrict ? Icons.lock : Icons.lock_open,
-                          size: 18, 
+                          size: 18,
                           color: Colors.black87
                         ),
                       ),
@@ -205,7 +205,7 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
                           }
                         },
                       ),
-                      
+
                       // Delete button
                       IconButton(
                         icon: Icon(Icons.delete_outline, color: Colors.grey),
@@ -245,7 +245,7 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
                 ],
               ),
             ),
-            
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
@@ -281,9 +281,9 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 8),
-                  
+
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
@@ -304,7 +304,7 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          rule.isAllDay 
+                          rule.isAllDay
                             ? 'All day'
                             : '${formatTimeOfDay(rule.startTime!)} - ${formatTimeOfDay(rule.endTime!)}',
                           style: const TextStyle(
@@ -316,9 +316,9 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   Text(
                     blockedAppsText,
                     style: const TextStyle(
@@ -326,7 +326,7 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
                       color: Colors.black54,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
                 ],
               ),
@@ -395,7 +395,7 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      body: _isLoading 
+      body: _isLoading
         ? Center(
             child: CircularProgressIndicator(
               color: Colors.black,
@@ -461,8 +461,8 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
                     ),
                   ),
                 ),
-                
-                // Active sessions list
+
+                // Active sessions lis
                 AnimatedCrossFade(
                   firstChild: Column(
                     children: _activeRules.map((rule) => Padding(
@@ -471,12 +471,12 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
                     )).toList(),
                   ),
                   secondChild: SizedBox(height: 0),
-                  crossFadeState: _showActiveSessions 
-                      ? CrossFadeState.showFirst 
+                  crossFadeState: _showActiveSessions
+                      ? CrossFadeState.showFirs
                       : CrossFadeState.showSecond,
                   duration: const Duration(milliseconds: 300),
                 ),
-                
+
                 // Inactive sessions section
                 if (_inactiveRules.isNotEmpty) ...[
                   Padding(
@@ -507,8 +507,8 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
                       ),
                     ),
                   ),
-                  
-                  // Inactive sessions list
+
+                  // Inactive sessions lis
                   AnimatedCrossFade(
                     firstChild: Column(
                       children: _inactiveRules.map((rule) => Padding(
@@ -517,8 +517,8 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
                       )).toList(),
                     ),
                     secondChild: SizedBox(height: 0),
-                    crossFadeState: _showInactiveSessions 
-                        ? CrossFadeState.showFirst 
+                    crossFadeState: _showInactiveSessions
+                        ? CrossFadeState.showFirs
                         : CrossFadeState.showSecond,
                     duration: const Duration(milliseconds: 300),
                   ),

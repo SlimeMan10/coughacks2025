@@ -20,7 +20,7 @@ class NativeRuleBridge {
   // Handle method calls from native code
   static Future<dynamic> _handleMethodCall(MethodCall call) async {
     print('📲 THIS IS IN DART: Received call from native: ${call.method}');
-    
+
     switch (call.method) {
       case 'checkAppAgainstRules':
         final String packageName = call.arguments;
@@ -41,7 +41,7 @@ class NativeRuleBridge {
   static Future<Map<String, dynamic>> _checkAppAgainstRules(String packageName) async {
     print('🧮 THIS IS IN DART: Evaluating rules for app: $packageName');
     final rules = await _ruleStorage.getRules();
-    
+
     for (final rule in rules) {
       final bool isActive = rule.isActiveNow();
       var containsApp = rule.blockedApps.contains(packageName);
@@ -56,9 +56,9 @@ class NativeRuleBridge {
           print(packageName.toLowerCase() + " contains " + eachRule.toLowerCase());
         }
       }
-      
+
       print('📝 THIS IS IN DART: Rule "${rule.name}" is ${isActive ? "active" : "inactive"} and ${containsApp ? "blocks" : "doesn\'t block"} $packageName');
-      
+
       if (isActive && containsApp) {
         print('🚫 THIS IS IN DART: App $packageName should be blocked by rule "${rule.name}"');
         return {
@@ -67,7 +67,7 @@ class NativeRuleBridge {
         };
       }
     }
-    
+
     print('✅ THIS IS IN DART: No active rules block app: $packageName');
     return {
       'blocked': false,
@@ -95,16 +95,16 @@ Future<void> checkAndBlockApp(String packageName) async {
   // First check Flutter rules
   final ruleStorage = RuleStorage();
   final rules = await ruleStorage.getRules();
-  
+
   String blockingRuleName = '';
   bool shouldBlock = false;
-  
+
   for (final rule in rules) {
     final bool isActive = rule.isActiveNow();
     final bool containsApp = rule.blockedApps.contains(packageName);
-    
+
     print('🔍 THIS IS IN DART: Rule "${rule.name}" is ${isActive ? "active" : "inactive"} and ${containsApp ? "blocks" : "doesn\'t block"} $packageName');
-    
+
     if (isActive && containsApp) {
       print('🚫 THIS IS IN DART: App $packageName should be blocked by rule "${rule.name}"');
       shouldBlock = true;
@@ -112,7 +112,7 @@ Future<void> checkAndBlockApp(String packageName) async {
       break;
     }
   }
-  
+
   if (shouldBlock) {
     print('📲 THIS IS IN DART: Telling native side to block app: $packageName');
     // Use the bridge to tell the native side this app should be blocked

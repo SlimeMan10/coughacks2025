@@ -2,44 +2,44 @@ import 'package:flutter/material.dart';
 
 /*
  * ONBOARDING SCREENS DOCUMENTATION
- * 
+ *
  * This file serves as a reference for all onboarding screens in the app.
- * The implementation is in splash_screen.dart, but this file exists to document
+ * The implementation is in splash_screen.dart, but this file exists to documen
  * the content, purpose, and flow of each screen for easier management.
  */
 
 class OnboardingConfig {
   // Total number of onboarding screens
   static const int totalScreens = 5;
-  
+
   // Screen 1: Introduction
   static const Map<String, String> screen1 = {
     'title': 'Screen 1',
     'content': 'First onboarding screen. This will introduce the app concept.',
     'design_notes': 'White background with minimalist design. Black progress indicator at top.'
   };
-  
+
   // Screen 2: Feature highlight 1
   static const Map<String, String> screen2 = {
     'title': 'Screen 2',
     'content': 'Second onboarding screen. This will highlight a key feature.',
     'design_notes': 'White background with minimalist design. Black progress indicator at top.'
   };
-  
+
   // Screen 3: Feature highlight 2
   static const Map<String, String> screen3 = {
     'title': 'Screen 3',
     'content': 'Third onboarding screen. This will highlight another key feature.',
     'design_notes': 'White background with minimalist design. Black progress indicator at top.'
   };
-  
+
   // Screen 4: Feature highlight 3
   static const Map<String, String> screen4 = {
     'title': 'Screen 4',
     'content': 'Fourth onboarding screen. This will highlight the final key feature.',
     'design_notes': 'White background with minimalist design. Black progress indicator at top.'
   };
-  
+
   // Screen 5: Original splash screen
   static const Map<String, String> screen5 = {
     'title': 'Blockr',
@@ -50,18 +50,18 @@ class OnboardingConfig {
 
 /*
  * NAVIGATION LOGIC
- * 
+ *
  * - Progress indicator at top shows current position (1/5, 2/5, etc.)
  * - Tapping on right half of screen advances to next screen
  * - Tapping on left half of screen returns to previous screen
  * - On first screen, tapping left does nothing
- * - On final screen, tapping right proceeds to permission request
+ * - On final screen, tapping right proceeds to permission reques
  * - Swipe gestures also navigate between screens
  */
 
 /*
  * SCREEN LAYOUT
- * 
+ *
  * ┌────────────────────────────────┐
  * │  ████████░░░░░░░░░░░░░░░░░░░░  │ <- Progress indicator (current position/total)
  * │                                │
@@ -70,7 +70,7 @@ class OnboardingConfig {
  * │                                │
  * │            Screen N            │ <- Title
  * │                                │
- * │      Screen description        │ <- Content
+ * │      Screen description        │ <- Conten
  * │                                │
  * │                                │
  * │                                │
@@ -83,7 +83,7 @@ class OnboardingConfig {
  * └────────────────────────────────┘
  */
 
-// The custom onboarding screen widget is defined in splash_screen.dart
+// The custom onboarding screen widget is defined in splash_screen.dar
 // This is the widget used to build screens 1-4:
 /*
 class OnboardingScreen extends StatelessWidget {
@@ -103,10 +103,10 @@ class OnboardingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    
+
     return Stack(
       children: [
-        // Content
+        // Conten
         Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -131,7 +131,7 @@ class OnboardingScreen extends StatelessWidget {
             ],
           ),
         ),
-        
+
         // Left half for going back
         Positioned(
           left: 0,
@@ -143,7 +143,7 @@ class OnboardingScreen extends StatelessWidget {
             behavior: HitTestBehavior.translucent,
           ),
         ),
-        
+
         // Right half for going forward
         Positioned(
           right: 0,
@@ -159,4 +159,4 @@ class OnboardingScreen extends StatelessWidget {
     );
   }
 }
-*/ 
+*/

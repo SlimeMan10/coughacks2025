@@ -102,12 +102,12 @@ class AppUsageAppState extends State<AppUsageApp>
     _startDate = DateTime(start.year, start.month, start.day, 3);
     _endDate = DateTime(end.year, end.month, end.day, now.hour, now.minute, now.second);
     getUsageStatsAndInsights();
-  } 
+  }
    final ScreenshotController _screenshotController = ScreenshotController();
 
-  
+
   void _shareScreenshot() {
-    
+
     ShareScreenshot(
       context: context,
       screenshotController: _screenshotController,
@@ -221,7 +221,7 @@ class AppUsageAppState extends State<AppUsageApp>
 
   String formatDuration(Duration duration, {bool forCircle = false}) {
     if (duration.inSeconds < 1) return "< 1m";
-    
+
     String result = "";
     if (duration.inMinutes >= 1) {
       result = "${duration.inMinutes.remainder(60)}m";
@@ -232,12 +232,12 @@ class AppUsageAppState extends State<AppUsageApp>
     if (duration.inDays >= 1) {
       result = "${duration.inDays}d $result";
     }
-    
+
     // If result is empty, at least return 0m
     if (result.isEmpty) {
       result = "0m";
     }
-    
+
     return result;
   }
 
@@ -265,7 +265,7 @@ class AppUsageAppState extends State<AppUsageApp>
     super.build(context);
     final DateFormat formatter = DateFormat('MMM d, HH:mm');
     final String timeRangeString = "${formatter.format(_startDate)} - ${formatter.format(_endDate)}";
-    
+
     return Screenshot(
       controller: _screenshotController,
       child: Scaffold(
@@ -326,7 +326,7 @@ class AppUsageAppState extends State<AppUsageApp>
     final totalUsage = getTotalUsage();
     final totalDataEstimate = _insights['data_given_out_estimate']?['total_kb'] ?? 0;
     final double usagePercentage = totalUsage.inMinutes / (24 * 60);
-    
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -374,7 +374,7 @@ class AppUsageAppState extends State<AppUsageApp>
             style: const TextStyle(fontSize: 14, color: Colors.black38),
           ),
           const SizedBox(height: 24),
-          
+
           // Data & Risk metrics
           Row(
             children: [
@@ -420,8 +420,8 @@ class AppUsageAppState extends State<AppUsageApp>
                       Text(
                         '${_overallRisk.toStringAsFixed(1)}/100',
                         style: TextStyle(
-                          color: _getRiskColor(_overallRisk.round()), 
-                          fontSize: 20, 
+                          color: _getRiskColor(_overallRisk.round()),
+                          fontSize: 20,
                           fontWeight: FontWeight.bold
                         ),
                       ),
@@ -463,7 +463,7 @@ class AppUsageAppState extends State<AppUsageApp>
           ),
         ),
         const SizedBox(height: 12),
-        
+
         if (riskiestApp != null) ...[
           Container(
             padding: const EdgeInsets.all(16),
@@ -526,7 +526,7 @@ class AppUsageAppState extends State<AppUsageApp>
           ),
           const SizedBox(height: 12),
         ],
-        
+
         if (securityTip != null) ...[
           Container(
             padding: const EdgeInsets.all(16),

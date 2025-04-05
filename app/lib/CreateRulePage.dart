@@ -2,14 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:app/Rule.dart';
 import 'package:installed_apps/installed_apps.dart';
 import 'package:installed_apps/app_info.dart';
-<<<<<<< HEAD
 import 'package:app/database/ruleDatabase.dart';
-=======
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
-import 'database/ruleDatabase.dart';
 import 'database/RuleStorageTestUtil.dart';
->>>>>>> bce5103559db56301f31948ef14741626a5e8df3
 
 class CreateRulePage extends StatefulWidget {
   final Rule? ruleToEdit; // Optional rule for editing
@@ -38,12 +34,12 @@ class _CreateRulePageState extends State<CreateRulePage> {
   bool _isStrict = false;
   bool _isEditMode = false;
   String? _originalRuleName;
-  
+
   // List of installed apps
   List<AppInfo> _installedApps = [];
   bool _isLoadingApps = true;
   String? _appLoadError;
-  
+
   // Map to maintain information about hardcoded important apps
   // This allows us to reference these even if they aren't found in scan
   final Map<String, String> _importantApps = {
@@ -57,27 +53,27 @@ class _CreateRulePageState extends State<CreateRulePage> {
   void initState() {
     super.initState();
     _loadInstalledApps();
-    
+
     // Set up editing mode if a rule is provided
     if (widget.ruleToEdit != null) {
       _initializeEditMode();
     }
   }
-  
+
   void _initializeEditMode() {
     final rule = widget.ruleToEdit!;
     _isEditMode = true;
     _originalRuleName = rule.name;
-    
+
     _nameController.text = rule.name;
     _selectedApps = List.from(rule.blockedApps);
     _isAllDay = rule.isAllDay;
-    
+
     if (!rule.isAllDay && rule.startTime != null && rule.endTime != null) {
       _startTime = rule.startTime!;
       _endTime = rule.endTime!;
     }
-    
+
     _selectedDays = List.from(rule.applicableDays);
     _isStrict = rule.isStrict;
   }
@@ -93,14 +89,14 @@ class _CreateRulePageState extends State<CreateRulePage> {
         print("Using cached list of ${_installedApps.length} apps");
         return;
       }
-      
+
       setState(() {
         _isLoadingApps = true;
         _appLoadError = null;
       });
-      
+
       print("Fetching ALL installed apps with icons...");
-      
+
       // Using the method from installed_apps package
       // Set withIcon to TRUE to load app icons
       List<AppInfo> apps = await InstalledApps.getInstalledApps(
@@ -113,17 +109,17 @@ class _CreateRulePageState extends State<CreateRulePage> {
           throw Exception("Timed out while loading apps. Please try again.");
         },
       );
-      
+
       print("Successfully fetched ${apps.length} apps from device");
-      
+
       // Sort by name for better usability
       apps.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-      
+
       setState(() {
         _installedApps = apps;
         _isLoadingApps = false;
       });
-      
+
       print("App list ready with ${apps.length} total apps");
     } catch (e) {
       setState(() {
@@ -212,8 +208,8 @@ class _CreateRulePageState extends State<CreateRulePage> {
                   ),
                 ),
               ),
-              
-              // Session name input
+
+              // Session name inpu
               Container(
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -272,8 +268,8 @@ class _CreateRulePageState extends State<CreateRulePage> {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: _selectedApps.isEmpty 
-                              ? Colors.amber.shade100 
+                          color: _selectedApps.isEmpty
+                              ? Colors.amber.shade100
                               : Colors.green.shade50,
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -281,12 +277,12 @@ class _CreateRulePageState extends State<CreateRulePage> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              _selectedApps.isEmpty 
-                                  ? Icons.warning_amber_outlined 
+                              _selectedApps.isEmpty
+                                  ? Icons.warning_amber_outlined
                                   : Icons.check_circle_outline,
-                              size: 16, 
-                              color: _selectedApps.isEmpty 
-                                  ? Colors.amber.shade800 
+                              size: 16,
+                              color: _selectedApps.isEmpty
+                                  ? Colors.amber.shade800
                                   : Colors.green.shade700
                             ),
                             SizedBox(width: 4),
@@ -295,8 +291,8 @@ class _CreateRulePageState extends State<CreateRulePage> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                color: _selectedApps.isEmpty 
-                                    ? Colors.amber.shade800 
+                                color: _selectedApps.isEmpty
+                                    ? Colors.amber.shade800
                                     : Colors.green.shade700,
                               ),
                             ),
@@ -314,8 +310,8 @@ class _CreateRulePageState extends State<CreateRulePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _selectedApps.isEmpty 
-                                ? 'No apps selected' 
+                            _selectedApps.isEmpty
+                                ? 'No apps selected'
                                 : '${_selectedApps.length} app${_selectedApps.length == 1 ? '' : 's'} selected',
                             style: TextStyle(
                               fontWeight: FontWeight.w500,
@@ -353,7 +349,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
                                     break;
                                   }
                                 }
-                                
+
                                 // For important apps, use the predefined name if the app isn't found
                                 String appName = "";
                                 if (appInfo != null) {
@@ -363,7 +359,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
                                 } else {
                                   appName = packageName.split('.').last;
                                 }
-                                
+
                                 return Chip(
                                   label: Text(
                                     appName,
@@ -663,7 +659,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
       children: weekdays.map((weekday) {
         final day = weekday['day'] as DayOfWeek;
         final isSelected = _selectedDays.contains(day);
-        
+
         return InkWell(
           onTap: () {
             setState(() {
@@ -703,7 +699,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
   Future<void> _selectTime(bool isStartTime) async {
     final TimeOfDay initialTime = isStartTime ? _startTime : _endTime;
     final String timeTypeLabel = isStartTime ? "Start Time" : "End Time";
-    
+
     try {
       final TimeOfDay? pickedTime = await showTimePicker(
         context: context,
@@ -737,7 +733,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
           );
         },
       );
-      
+
       if (pickedTime != null) {
         // Update the state with the new time
         setState(() {
@@ -747,7 +743,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
             _endTime = pickedTime;
           }
         });
-        
+
         // Schedule another rebuild after the current frame
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -776,7 +772,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
   void _showAppSelectionBottomSheet(BuildContext context) {
     TextEditingController searchController = TextEditingController();
     List<AppInfo> filteredApps = List.from(_installedApps);
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -792,14 +788,14 @@ class _CreateRulePageState extends State<CreateRulePage> {
                   filteredApps = List.from(_installedApps);
                 } else {
                   filteredApps = _installedApps
-                      .where((app) => 
-                          app.name.toLowerCase().contains(query.toLowerCase()) || 
+                      .where((app) =>
+                          app.name.toLowerCase().contains(query.toLowerCase()) ||
                           app.packageName.toLowerCase().contains(query.toLowerCase()))
                       .toList();
                 }
               });
             }
-            
+
             return Container(
               height: MediaQuery.of(context).size.height * 0.8,
               padding: EdgeInsets.all(16),
@@ -939,14 +935,14 @@ class _CreateRulePageState extends State<CreateRulePage> {
                     Expanded(
                       child: ListView(
                         children: [
-                          // Important apps section - always show these first
+                          // Important apps section - always show these firs
                           if (searchController.text.isEmpty) ...[
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8.0),
                               child: Text(
                                 'Popular Apps',
                                 style: TextStyle(
-                                  fontSize: 16, 
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.blue,
                                 ),
@@ -956,10 +952,10 @@ class _CreateRulePageState extends State<CreateRulePage> {
                               final packageName = entry.key;
                               final appName = entry.value;
                               final bool isSelected = _selectedApps.contains(packageName);
-                              // Find if this app is in the installed apps list
-                              final installedApp = _installedApps.any((app) => 
+                              // Find if this app is in the installed apps lis
+                              final installedApp = _installedApps.any((app) =>
                                 app.packageName == packageName);
-                              
+
                               return ListTile(
                                 leading: Icon(
                                   _getIconForApp(packageName),
@@ -1038,30 +1034,30 @@ class _CreateRulePageState extends State<CreateRulePage> {
                                 dense: true,
                               );
                             }).toList(),
-                            
+
                             Divider(thickness: 1),
-                            
+
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8.0),
                               child: Text(
                                 'All Apps',
                                 style: TextStyle(
-                                  fontSize: 16, 
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.grey.shade700,
                                 ),
                               ),
                             ),
                           ],
-                          
-                          // Regular installed apps list
+
+                          // Regular installed apps lis
                           ...filteredApps.map((app) {
                             final isSelected = _selectedApps.contains(app.packageName);
                             // Skip if this app is one of our important apps (already shown above)
                             if (searchController.text.isEmpty && _importantApps.containsKey(app.packageName)) {
                               return SizedBox.shrink();
                             }
-                            
+
                             return ListTile(
                               leading: app.icon != null
                                   ? Image.memory(app.icon!, width: 28, height: 28)
@@ -1184,7 +1180,6 @@ class _CreateRulePageState extends State<CreateRulePage> {
     );
   }
 
-<<<<<<< Updated upstream
   // Helper method to get appropriate icon for popular apps
   IconData _getIconForApp(String packageName) {
     switch (packageName) {
@@ -1201,7 +1196,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
     }
   }
 
-  void _createRule() {
+  Future<void> _createRule() async {
     if (_nameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please enter a session name')),
@@ -1244,7 +1239,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
     for (int i = 0; i < newRule.blockedApps.length; i++) {
       String packageName = newRule.blockedApps[i];
       String appName = "Unknown";
-      
+
       // Check in installed apps
       for (var app in _installedApps) {
         if (app.packageName == packageName) {
@@ -1252,12 +1247,12 @@ class _CreateRulePageState extends State<CreateRulePage> {
           break;
         }
       }
-      
+
       // Check in important apps if not found in installed apps
       if (appName == "Unknown" && _importantApps.containsKey(packageName)) {
         appName = _importantApps[packageName]!;
       }
-      
+
       print("${i+1}. $appName ($packageName)");
     }
     print("-----------------------------------------------------");
@@ -1266,254 +1261,218 @@ class _CreateRulePageState extends State<CreateRulePage> {
     print("Strict mode: ${newRule.isStrict ? 'YES' : 'NO'}");
     print("=====================================================\n");
 
-    // Return the rule to the previous screen
-    Navigator.pop(context, newRule);
-=======
-Future<void> _createRule() async {
-  if (_nameController.text.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Please enter a session name')),
-    );
-    return;
->>>>>>> Stashed changes
-  }
-
-  if (_selectedApps.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Please select at least one app to block')),
-    );
-    return;
-  }
-
-  if (!_isAllDay && _selectedDays.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Please select at least one day of the week')),
-    );
-    return;
-  }
-
-  final newRule = Rule(
-    name: _nameController.text,
-    blockedApps: _selectedApps,
-    isAllDay: _isAllDay,
-    startTime: _isAllDay ? null : _startTime,
-    endTime: _isAllDay ? null : _endTime,
-    applicableDays: _selectedDays,
-    isStrict: _isStrict,
-  );
-
-  // Show loading indicator
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext context) {
-      return Dialog(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(color: Colors.black),
-              SizedBox(width: 20),
-              Text("Saving rule..."),
-            ],
-          ),
-        ),
-      );
-    },
-  );
-
-  // Save the rule and run the test
-  try {
-    // Get SharedPreferences instance for local settings
-    final prefs = await SharedPreferences.getInstance();
-    
-    // Save rule details to SharedPreferences
-    await prefs.setString('ruleName', newRule.name);
-    await prefs.setStringList('blockedApps', newRule.blockedApps);
-    await prefs.setBool('isAllDay', newRule.isAllDay);
-    
-    if (!newRule.isAllDay) {
-      await prefs.setString('startTimeHour', newRule.startTime!.hour.toString());
-      await prefs.setString('startTimeMinute', newRule.startTime!.minute.toString());
-      await prefs.setString('endTimeHour', newRule.endTime!.hour.toString());
-      await prefs.setString('endTimeMinute', newRule.endTime!.minute.toString());
-    }
-    
-    // Convert selectedDays to strings for storage
-    await prefs.setStringList('selectedDays', 
-      newRule.applicableDays.map((day) => day.toString()).toList());
-    
-    await prefs.setBool('isStrict', newRule.isStrict);
-    
-    // Create storage instance and save rule
-    final storage = RuleStorage();
-    
-    bool success = false;
-    if (await storage.ruleExists(newRule.name)) {
-      success = await storage.updateRule(newRule.name, newRule);
-    } else {
-      success = await storage.addRule(newRule);
-    }
-    
-    // Close loading dialog
-    Navigator.pop(context);
-    
-    // Run the storage test with the saved rule
-    if (success) {
-      try {
-        print("Running rule storage test...");
-        final testResults = await RuleStorageTestUtil.testRuleStorage(newRule);
-        print("Test completed, showing results dialog");
-        // Don't navigate back until the user has seen the test results
-        await _showTestResultsDialog(testResults);
-        
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Rule saved successfully'),
-            duration: const Duration(seconds: 2),
-            backgroundColor: Colors.green,
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: Colors.black),
+                SizedBox(width: 20),
+                Text("Saving rule..."),
+              ],
+            ),
           ),
         );
-        
-        // Return to previous screen with the rule AFTER dialog is closed
-        Navigator.pop(context, newRule);
-      } catch (testError) {
-        print("Error during test: $testError");
+      },
+    );
+
+    // Save the rule and run the tes
+    try {
+      // Get SharedPreferences instance for local settings
+      final prefs = await SharedPreferences.getInstance();
+
+      // Save rule details to SharedPreferences
+      await prefs.setString('ruleName', newRule.name);
+      await prefs.setStringList('blockedApps', newRule.blockedApps);
+      await prefs.setBool('isAllDay', newRule.isAllDay);
+
+      if (!newRule.isAllDay) {
+        await prefs.setString('startTimeHour', newRule.startTime!.hour.toString());
+        await prefs.setString('startTimeMinute', newRule.startTime!.minute.toString());
+        await prefs.setString('endTimeHour', newRule.endTime!.hour.toString());
+        await prefs.setString('endTimeMinute', newRule.endTime!.minute.toString());
+      }
+
+      // Convert selectedDays to strings for storage
+      await prefs.setStringList('selectedDays',
+        newRule.applicableDays.map((day) => day.toString()).toList());
+
+      await prefs.setBool('isStrict', newRule.isStrict);
+
+      // Create storage instance and save rule
+      final storage = RuleStorage();
+
+      bool success = false;
+      if (await storage.ruleExists(newRule.name)) {
+        success = await storage.updateRule(newRule.name, newRule);
+      } else {
+        success = await storage.addRule(newRule);
+      }
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      // Run the storage test with the saved rule
+      if (success) {
+        try {
+          print("Running rule storage test...");
+          final testResults = await RuleStorageTestUtil.testRuleStorage(newRule);
+          print("Test completed, showing results dialog");
+          // Don't navigate back until the user has seen the test results
+          await _showTestResultsDialog(testResults);
+
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Rule saved successfully'),
+              duration: const Duration(seconds: 2),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Return to previous screen with the rule AFTER dialog is closed
+          Navigator.pop(context, newRule);
+        } catch (testError) {
+          print("Error during test: $testError");
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Rule saved but test failed: $testError'),
+              duration: const Duration(seconds: 3),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } else {
+        // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Rule saved but test failed: $testError'),
+            content: Text('Failed to save rule'),
             duration: const Duration(seconds: 3),
-            backgroundColor: Colors.orange,
+            backgroundColor: Colors.red,
           ),
         );
       }
-    } else {
+    } catch (e) {
+      // Close loading dialog if it's showing
+      Navigator.of(context).pop();
+
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to save rule'),
+          content: Text('Error saving rule: $e'),
           duration: const Duration(seconds: 3),
           backgroundColor: Colors.red,
         ),
       );
     }
-  } catch (e) {
-    // Close loading dialog if it's showing
-    Navigator.of(context).pop();
-    
-    // Show error message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error saving rule: $e'),
-        duration: const Duration(seconds: 3),
-        backgroundColor: Colors.red,
-      ),
-    );
   }
-}
 
-// Show test results in a dialog and return a Future that completes when dialog is closed
-Future<void> _showTestResultsDialog(String results) async {
-  print("Dialog content length: ${results.length}");
-  return showDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext context) {
-      return Dialog(
-        backgroundColor: Colors.black,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.purpleAccent, width: 2),
-        ),
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.9,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.task_alt, color: Colors.purpleAccent),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Rule Storage Test Results',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.purpleAccent,
+  // Show test results in a dialog and return a Future that completes when dialog is closed
+  Future<void> _showTestResultsDialog(String results) async {
+    print("Dialog content length: ${results.length}");
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.purpleAccent, width: 2),
+          ),
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.task_alt, color: Colors.purpleAccent),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Rule Storage Test Results',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.purpleAccent,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[900],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[700]!),
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: SingleChildScrollView(
+                    child: SelectableText(
+                      results,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        color: Colors.white,
                       ),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Container(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.6,
                 ),
-                decoration: BoxDecoration(
-                  color: Colors.grey[900],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[700]!),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        // Copy results to clipboard
+                        Clipboard.setData(ClipboardData(text: results));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Results copied to clipboard')),
+                        );
+                      },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.copy, size: 16, color: Colors.white70),
+                          SizedBox(width: 4),
+                          Text('Copy', style: TextStyle(color: Colors.white70)),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                        foregroundColor: Colors.black,
+                      ),
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Close'),
+                    ),
+                  ],
                 ),
-                padding: const EdgeInsets.all(12),
-                child: SingleChildScrollView(
-                  child: SelectableText(
-                    results,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      // Copy results to clipboard
-                      Clipboard.setData(ClipboardData(text: results));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Results copied to clipboard')),
-                      );
-                    },
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.copy, size: 16, color: Colors.white70),
-                        SizedBox(width: 4),
-                        Text('Copy', style: TextStyle(color: Colors.white70)),
-                      ],
-                    ),
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber,
-                      foregroundColor: Colors.black,
-                    ),
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Close'),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     super.dispose();
   }
-} 
+}

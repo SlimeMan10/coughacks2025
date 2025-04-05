@@ -14,7 +14,7 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
   int _currentPage = 0;
   final int _totalPages = 5;
   late PageController _pageController;
-  
+
   bool _checkingPermissions = false;
   Timer? _permissionCheckTimer;
   Timer? _permissionsDataTimeout;
@@ -25,10 +25,10 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _pageController = PageController(initialPage: 0);
-    
+
     // Check if permissions data is already loaded
     _checkPermissionsDataStatus();
-    
+
     // Set a timeout for permissions data loading
     _permissionsDataTimeout = Timer(Duration(seconds: 10), () {
       print("Permissions data preload timed out, proceeding anyway");
@@ -36,14 +36,14 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
         setState(() => _permissionsDataReady = true);
       }
     });
-    
+
     // Check permissions initially
     _checkAndNavigateIfPermissionsGranted();
   }
-  
+
   void _checkPermissionsDataStatus() {
     final dataService = PermissionsDataService();
-    
+
     // Add one-time listener for when data is loaded
     dataService.addDataLoadedListener(() {
       print("Permissions data preloaded successfully!");
@@ -54,7 +54,7 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
         _checkAndNavigateIfPermissionsGranted();
       }
     });
-    
+
     // If data is already loaded, mark as ready
     if (dataService.isLoaded) {
       print("Permissions data already loaded!");
@@ -85,18 +85,18 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
 
   Future<void> _checkAndNavigateIfPermissionsGranted() async {
     if (_checkingPermissions) return;
-    
+
     _checkingPermissions = true;
-    
+
     try {
       final bool accessibilityEnabled = await NativeBridge.isAccessibilityEnabled();
       final bool overlayPermission = await NativeBridge.hasOverlayPermission();
-      
+
       print("Accessibility enabled: $accessibilityEnabled");
       print("Overlay permission: $overlayPermission");
       print("Permissions data ready: $_permissionsDataReady");
-      
-      // Only navigate if all conditions are met
+
+      // Only navigate if all conditions are me
       if (accessibilityEnabled && overlayPermission && _permissionsDataReady) {
         _navigateToHome();
       } else if (mounted) {
@@ -118,7 +118,7 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
 
   void _navigateToHome() {
     if (!mounted) return;
-    
+
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (_, __, ___) => Tabs(),
@@ -163,8 +163,8 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
               ),
             ),
           ),
-          
-          // Page content
+
+          // Page conten
           Expanded(
             child: PageView.builder(
               controller: _pageController,
@@ -184,14 +184,14 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
                     title: "Screen ${index + 1}",
                     content: "${_getOrdinal(index + 1)} onboarding screen.",
                     onTapLeft: () => index > 0 ? _pageController.animateToPage(
-                      index - 1, 
-                      duration: Duration(milliseconds: 300), 
-                      curve: Curves.easeInOut
+                      index - 1,
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeInOu
                     ) : () {},
                     onTapRight: () => _pageController.animateToPage(
-                      index + 1, 
-                      duration: Duration(milliseconds: 300), 
-                      curve: Curves.easeInOut
+                      index + 1,
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeInOu
                     ),
                   );
                 } else {
@@ -205,7 +205,7 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
       ),
     );
   }
-  
+
   String _getOrdinal(int number) {
     switch(number) {
       case 1: return "First";
@@ -215,13 +215,13 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
       default: return "${number}th";
     }
   }
-  
+
   Widget _buildFinalScreen(double screenWidth) {
     return Container(
       color: Colors.white,
       child: Stack(
         children: [
-          // Info Content
+          // Info Conten
           Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -231,7 +231,7 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
                   children: [
                     Icon(
                       Icons.shield_outlined,
-                      size: 80, 
+                      size: 80,
                       color: Colors.black87
                     ),
                     const SizedBox(height: 16),
@@ -308,9 +308,9 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
             width: screenWidth / 2,
             child: GestureDetector(
               onTap: () => _pageController.animateToPage(
-                3, 
-                duration: Duration(milliseconds: 300), 
-                curve: Curves.easeInOut
+                3,
+                duration: Duration(milliseconds: 300),
+                curve: Curves.easeInOu
               ),
               behavior: HitTestBehavior.translucent,
             ),
@@ -345,8 +345,8 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
           Text(
             content,
             style: TextStyle(
-              fontSize: 14, 
-              color: Colors.black87, 
+              fontSize: 14,
+              color: Colors.black87,
               height: 1.4
             )
           ),
@@ -359,23 +359,23 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
     // First check if permissions are already granted
     final bool accessibilityEnabled = await NativeBridge.isAccessibilityEnabled();
     final bool overlayPermission = await NativeBridge.hasOverlayPermission();
-    
+
     if (accessibilityEnabled && overlayPermission) {
       // Permissions already granted, navigate directly
       _navigateToHome();
       return;
     }
-    
+
     // Request any missing permissions
     if (!accessibilityEnabled) {
       await NativeBridge.openAccessibilitySettings();
     }
-    
+
     if (!overlayPermission) {
       await Future.delayed(const Duration(milliseconds: 500));
       await NativeBridge.requestOverlayPermission();
     }
-    
+
     // Start checking permissions after a short delay
     _permissionCheckTimer?.cancel();
     _permissionCheckTimer = Timer(const Duration(seconds: 1), () {
@@ -385,7 +385,7 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
   }
 }
 
-// Reusable Onboarding Screen Widget
+// Reusable Onboarding Screen Widge
 class OnboardingScreen extends StatelessWidget {
   final String title;
   final String content;
@@ -403,10 +403,10 @@ class OnboardingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    
+
     return Stack(
       children: [
-        // Content
+        // Conten
         Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -431,7 +431,7 @@ class OnboardingScreen extends StatelessWidget {
             ],
           ),
         ),
-        
+
         // Left half for going back
         Positioned(
           left: 0,
@@ -443,7 +443,7 @@ class OnboardingScreen extends StatelessWidget {
             behavior: HitTestBehavior.translucent,
           ),
         ),
-        
+
         // Right half for going forward
         Positioned(
           right: 0,

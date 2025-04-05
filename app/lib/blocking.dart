@@ -1,4 +1,4 @@
-import 'package:app/method_channel.dart'; // Assuming this path is correct
+import 'package:app/method_channel.dart'; // Assuming this path is correc
 import 'package:flutter/material.dart';
 
 class Blocking extends StatefulWidget {
@@ -115,20 +115,20 @@ class _BlockingState extends State<Blocking> with WidgetsBindingObserver {
   Future<void> _checkPermissionsWithRetry() async {
     // First immediate check
     await _checkPermissions();
-    
+
     // If not all permissions are granted, set up periodic checks
     if (!(_isAccessibilityEnabled == true && _hasOverlayPermission == true)) {
       // Check permissions again after 1 second
       Future.delayed(const Duration(milliseconds: 800), () async {
         if (!mounted) return;
         await _checkPermissions();
-        
+
         // If still not granted, check one more time after a shorter delay
         if (!(_isAccessibilityEnabled == true && _hasOverlayPermission == true)) {
           Future.delayed(const Duration(milliseconds: 800), () async {
             if (!mounted) return;
             await _checkPermissions();
-            
+
             // One final check after another delay if needed
             if (!(_isAccessibilityEnabled == true && _hasOverlayPermission == true)) {
               Future.delayed(const Duration(milliseconds: 800), () {

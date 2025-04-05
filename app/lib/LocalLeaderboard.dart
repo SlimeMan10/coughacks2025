@@ -43,7 +43,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
         List<AppUsageInfo> usage = await appUsage.getAppUsage(startOfDay, endOfDay);
 
         Duration totalScreentime = usage.fold(
-          Duration.zero, 
+          Duration.zero,
           (total, info) => total + info.usage
         );
 
@@ -53,7 +53,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
         lastWeekScreentime[6-i] = 0;
       }
     }
-    
+
     // Update user screentime to today's screentime
     userScreentime = lastWeekScreentime[6];
   }
@@ -89,7 +89,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
   // Improved weekly average calculation
   int get weeklyAverage {
     if (lastWeekScreentime.length < 7) return 0;
-    
+
     int total = lastWeekScreentime.take(6).fold(0, (sum, val) => sum + val);
     return (total / 6).round();
   }
@@ -97,14 +97,14 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
   String getNextLowerRank(String currentRank) {
     const ranks = ['S', 'A', 'B', 'C', 'D', 'F'];
     final index = ranks.indexOf(currentRank);
-    return (index == -1 || index == ranks.length - 1) 
-      ? currentRank 
+    return (index == -1 || index == ranks.length - 1)
+      ? currentRank
       : ranks[index + 1];
   }
 
   String getRankTier(int userTime, int avg) {
     if (avg == 0) return 'B'; // Default case to prevent division by zero
-    
+
     double ratio = userTime / avg;
     if (ratio >= 2.0) return 'F';
     if (ratio >= 1.5) return 'D';
@@ -133,22 +133,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
 
   Color getRankColor(String tier) {
     switch (tier) {
-<<<<<<< HEAD
-      case 'S':
-        return const Color(0xFF7E57C2); // Purple
-      case 'A':
-        return const Color(0xFF66BB6A); // Green
-      case 'B':
-        return const Color(0xFF42A5F5); // Blue
-      case 'C':
-        return const Color(0xFFFFD54F); // Yellow
-      case 'D':
-        return const Color(0xFFFF9800); // Orange
-      case 'F':
-        return const Color(0xFFEF5350); // Red
-      default:
-        return Colors.grey;
-=======
+
       case 'S': return Colors.purple;
       case 'A': return Colors.green;
       case 'B': return Colors.blue;
@@ -156,7 +141,6 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
       case 'D': return Colors.orange;
       case 'F': return Colors.red;
       default: return Colors.grey;
->>>>>>> bce5103559db56301f31948ef14741626a5e8df3
     }
   }
 
@@ -166,20 +150,14 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
     return '${hours}h ${mins}m';
   }
 
-<<<<<<< HEAD
-  int get weeklyAverage {
-    int total = lastWeekScreentime.fold(0, (sum, val) => sum + val);
-    return total > 0 ? ((total - userScreentime) / max(1, min(6, lastWeekScreentime.where((t) => t > 0).length - 1))).round() : 0;
-  }
 
   int loop6(int i) {
     if (i > 6) return i - 7;
     return i;
-=======
+  }
   // Improved circular indexing
   int circularIndex(int index) {
     return (index + _day) % 7;
->>>>>>> bce5103559db56301f31948ef14741626a5e8df3
   }
 
   @override
@@ -248,207 +226,10 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-<<<<<<< HEAD
                           ],
-=======
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  height: 40,
-                                  child: LayoutBuilder(
-                                    builder: (context, constraints) {
-                                      final barWidth = constraints.maxWidth;
-                                      final userPosition = (userScreentime / 1440) * barWidth;
-                                      final globalPosition = (globalAverage / 1440) * barWidth;
-                                      final weeklyPosition = (weeklyAverage / 1440) * barWidth;
-
-                                      return Stack(
-                                        children: [
-                                          Positioned(
-                                            top: 14,
-                                            left: 0,
-                                            right: 0,
-                                            child: Container(
-                                              height: 24,
-                                              decoration: BoxDecoration(
-                                                color: Colors.white12,
-                                                borderRadius: BorderRadius.circular(12),
-                                              ),
-                                            ),
-                                          ),
-                                          Positioned(
-                                            top: 14,
-                                            left: 0,
-                                            child: Container(
-                                              width: userPosition > 0 ? userPosition : 0,
-                                              height: 24,
-                                              decoration: BoxDecoration(
-                                                color: getRankColor(tier),
-                                                borderRadius: BorderRadius.circular(12),
-                                              ),
-                                            ),
-                                          ),
-                                          Positioned(
-                                            top: 14,
-                                            left: globalPosition > 0 ? globalPosition : 0,
-                                            child: Container(
-                                              width: 3,
-                                              height: 24,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                          Positioned(
-                                            top: 14,
-                                            left: weeklyPosition > 0 ? weeklyPosition : 0,
-                                            child: Container(
-                                              width: 3,
-                                              height: 24,
-                                              color: const Color.fromARGB(255, 126, 126, 126),
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: const [
-                                    Text(
-                                      '0',
-                                      style: TextStyle(color: Colors.white70, fontSize: 12),
-                                    ),
-                                    Text(
-                                      '24h',
-                                      style: TextStyle(color: Colors.white70, fontSize: 12),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Your Screentime Today: ${formatMinutes(userScreentime)}',
-                        style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255), fontSize: 16),
-                      ),
-                      Text(
-                        'Weekly Average: ${formatMinutes(weeklyAverage)}',
-                        style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255), fontSize: 16),
-                      ),
-                      Text(
-                        'Global Average: ${formatMinutes(globalAverage)}',
-                        style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255), fontSize: 16),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Last 7 Days',
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
-                      ),
-                      const SizedBox(height: 8),
-                      AspectRatio(
-                        aspectRatio: 1.7,
-                        child: BarChart(
-                          BarChartData(
-                            alignment: BarChartAlignment.spaceAround,
-                            maxY: 1440,
-                            minY: 0,
-                            barTouchData: BarTouchData(
-                              enabled: true,
-                              touchTooltipData: BarTouchTooltipData(
-                                getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                                  return BarTooltipItem(
-                                    '${weekdays[circularIndex(group.x)]}: ${formatMinutes(rod.toY.toInt())}',
-                                    const TextStyle(color: Colors.white),
-                                  );
-                                },
-                              ),
-                            ),
-                            titlesData: FlTitlesData(
-                              show: true,
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize: 30,
-                                  getTitlesWidget: (value, meta) {
-                                    return SideTitleWidget(
-                                      meta: meta,
-                                      child: Text(
-                                        weekdays[circularIndex(value.toInt())],
-                                        style: const TextStyle(color: Colors.white70, fontSize: 12),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  getTitlesWidget: (value, meta) {
-                                    int hours = value ~/ 60;
-                                    return SideTitleWidget(
-                                      meta: meta,
-                                      child: Text(
-                                        '${hours}h',
-                                        style: const TextStyle(color: Colors.white70, fontSize: 12),
-                                      ),
-                                    );
-                                  },
-                                  reservedSize: 40,
-                                  interval: 120,
-                                ),
-                              ),
-                              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            ),
-                            gridData: FlGridData(
-                              show: true,
-                              horizontalInterval: 60,
-                              getDrawingHorizontalLine: (value) {
-                                return FlLine(color: Colors.white10, strokeWidth: 1);
-                              },
-                              drawVerticalLine: false,
-                            ),
-                            borderData: FlBorderData(show: false),
-                            extraLinesData: ExtraLinesData(
-                              horizontalLines: [
-                                HorizontalLine(
-                                  y: weeklyAverage.toDouble(),
-                                  color: Colors.amberAccent,
-                                  strokeWidth: 1.5,
-                                  dashArray: [4, 2],
-                                  label: HorizontalLineLabel(
-                                    show: true,
-                                    labelResolver: (_) => 'Weekly Avg',
-                                    style: const TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                HorizontalLine(
-                                  y: globalAverage.toDouble(),
-                                  color: const Color.fromARGB(255, 255, 255, 255),
-                                  strokeWidth: 1.5,
-                                  dashArray: [4, 2],
-                                  label: HorizontalLineLabel(
-                                    show: true,
-                                    labelResolver: (_) => 'Global Avg',
-                                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ],
-                              ),
-                            barGroups: _buildBarGroups(),
-                          ),
->>>>>>> bce5103559db56301f31948ef14741626a5e8df3
                         ),
                       ),
-                      
+
                       // Rank card
                       Container(
                         margin: const EdgeInsets.only(bottom: 24),
@@ -511,7 +292,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
                                 ],
                               ),
                             ),
-                            
+
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16.0),
                               child: Column(
@@ -532,7 +313,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
                                         final userPercentage = userScreentime / 1440;
                                         final weeklyPercentage = weeklyAverage / 1440;
                                         final globalPercentage = globalAverage / 1440;
-                                        
+
                                         return Stack(
                                           children: [
                                             // Progress bar
@@ -552,7 +333,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
                                                 ),
                                               ),
                                             ),
-                                            
+
                                             // Weekly average marker
                                             if (weeklyAverage > 0)
                                               Positioned(
@@ -564,7 +345,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
                                                   color: Colors.black87,
                                                 ),
                                               ),
-                                            
+
                                             // Global average marker
                                             Positioned(
                                               top: 8,
@@ -580,9 +361,9 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
                                       },
                                     ),
                                   ),
-                                  
+
                                   const SizedBox(height: 8),
-                                  
+
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: const [
@@ -596,15 +377,15 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
                                       ),
                                     ],
                                   ),
-                                  
+
                                   const SizedBox(height: 16),
-                                  
+
                                   // Stats row
                                   Row(
                                     children: [
                                       Expanded(
                                         child: _buildStatPill(
-                                          'Your Screentime', 
+                                          'Your Screentime',
                                           formatMinutes(userScreentime),
                                           Colors.grey.shade100,
                                         ),
@@ -612,22 +393,22 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: _buildStatPill(
-                                          'Weekly Average', 
+                                          'Weekly Average',
                                           formatMinutes(weeklyAverage),
                                           Colors.grey.shade100,
                                         ),
                                       ),
                                     ],
                                   ),
-                                  
+
                                   const SizedBox(height: 12),
-                                  
+
                                   _buildStatPill(
-                                    'Global Average', 
+                                    'Global Average',
                                     formatMinutes(globalAverage),
                                     Colors.grey.shade100,
                                   ),
-                                  
+
                                   const SizedBox(height: 16),
                                 ],
                               ),
@@ -635,7 +416,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
                           ],
                         ),
                       ),
-                      
+
                       // Weekly activity section
                       const Padding(
                         padding: EdgeInsets.only(left: 8, bottom: 16),
@@ -654,7 +435,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
                           ],
                         ),
                       ),
-                      
+
                       // Weekly chart card
                       Container(
                         margin: const EdgeInsets.only(bottom: 24),
@@ -693,7 +474,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
       ),
     );
   }
-  
+
   String getRankTitle(String tier) {
     switch (tier) {
       case 'S':
@@ -712,7 +493,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
         return 'Unknown';
     }
   }
-  
+
   Widget _buildStatPill(String label, String value, Color bgColor) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -744,7 +525,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
       ),
     );
   }
-  
+
   Widget _buildBarChart(int globalAverage, int weeklyAverage) {
     return BarChart(
       BarChartData(

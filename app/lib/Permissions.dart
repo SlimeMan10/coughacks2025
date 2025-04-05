@@ -31,7 +31,7 @@ class PermissionsTab extends StatefulWidget {
 class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   // Use the PermissionsDataService
   final PermissionsDataService _dataService = PermissionsDataService();
-  
+
   Map<String, List<AppInfo>> permissionsToApps = {};
   Map<String, List<String>> appToPermissions = {};
   List<Map<String, dynamic>> permissionCards = [];
@@ -39,7 +39,7 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
   MatchEngine? matchEngine;
   bool _isLoading = true;
   bool _isReviewing = false; // To toggle between overview and card view
-  
+
   // Animation controllers
   late AnimationController _pageTransitionController;
   late Animation<double> _pageTransitionAnimation;
@@ -145,18 +145,18 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize animation controllers
     _pageTransitionController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    
+
     _pageTransitionAnimation = CurvedAnimation(
       parent: _pageTransitionController,
       curve: Curves.easeInOut,
     );
-    
+
     // Set up listeners for the data service
     _dataService.addLoadingListener((isLoading) {
       if (mounted) {
@@ -165,13 +165,13 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
         });
       }
     });
-    
+
     _dataService.addDataLoadedListener(() {
       if (mounted) {
         _prepareUIFromCachedData();
       }
     });
-    
+
     _dataService.addErrorListener((error) {
       if (mounted) {
         setState(() {
@@ -180,7 +180,7 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
         _showErrorSnackBar(error);
       }
     });
-    
+
     // Check if data is already loaded or start loading
     if (_dataService.isLoaded) {
       _prepareUIFromCachedData();
@@ -188,11 +188,11 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
       _loadPermissionsData();
     }
   }
-  
+
   @override
   void dispose() {
     _pageTransitionController.dispose();
-    
+
     // Clean up listeners
     _dataService.removeLoadingListener((isLoading) {
       if (mounted) {
@@ -201,13 +201,13 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
         });
       }
     });
-    
+
     _dataService.removeDataLoadedListener(() {
       if (mounted) {
         _prepareUIFromCachedData();
       }
     });
-    
+
     _dataService.removeErrorListener((error) {
       if (mounted) {
         setState(() {
@@ -216,7 +216,7 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
         _showErrorSnackBar(error);
       }
     });
-    
+
     super.dispose();
   }
 
@@ -226,10 +226,10 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
     permissionsToApps = _dataService.permissionsToApps;
     appToPermissions = _dataService.appToPermissions;
     permissionCards = _dataService.permissionCards;
-    
+
     // Create swipe items
     _createSwipeItems();
-    
+
     // Update UI
     if (mounted) {
       setState(() {
@@ -237,7 +237,7 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
       });
     }
   }
-  
+
   // Create SwipeItems from permissionCards
   void _createSwipeItems() {
     swipeItems = permissionCards.map((card) {
@@ -261,7 +261,7 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
 
     matchEngine = MatchEngine(swipeItems: swipeItems);
   }
-  
+
   // Show error snackbar
   void _showErrorSnackBar(String error) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -275,18 +275,18 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
       ),
     );
   }
-  
+
   // Load permissions data through the service
   Future<void> _loadPermissionsData() async {
     setState(() => _isLoading = true);
-    
+
     // Use the data service to load or refresh the data
     if (_dataService.isLoaded) {
       await _dataService.refreshData();
     } else {
       await _dataService.preloadData();
     }
-    
+
     // No need to update state here as it's handled by listeners
   }
 
@@ -404,10 +404,10 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
       ),
     );
   }
-  
+
   Widget _buildActionButton({
-    required VoidCallback onTap, 
-    required String text, 
+    required VoidCallback onTap,
+    required String text,
     required IconData icon,
     required bool isNegative,
   }) {
@@ -490,10 +490,10 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: _isReviewing 
+      appBar: _isReviewing
           ? AppBar(
               backgroundColor: Colors.white,
               elevation: 0,
@@ -548,7 +548,7 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
           ? const Center(child: CircularProgressIndicator(color: Colors.black))
           : Stack(
               children: [
-                // Overview content
+                // Overview conten
                 AnimatedBuilder(
                   animation: _pageTransitionAnimation,
                   builder: (context, child) {
@@ -565,7 +565,7 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
                     children: [
                       // Review button at the top
                       _buildReviewButton(),
-                      
+
                       // Stats row
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -585,10 +585,10 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
                           ],
                         ),
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
-                      // Permission list
+
+                      // Permission lis
                       Expanded(
                         child: ListView.builder(
                           itemCount: _dataService.dangerousPermissionsList.length,
@@ -599,8 +599,8 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
                     ],
                   ),
                 ),
-                
-                // Review cards content
+
+                // Review cards conten
                 AnimatedBuilder(
                   animation: _pageTransitionAnimation,
                   builder: (context, child) {
@@ -632,7 +632,7 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
             ),
     );
   }
-  
+
   Widget _buildStatBadge({required int count, required String label, required IconData icon}) {
     return Expanded(
       child: Container(
@@ -755,7 +755,7 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
             ),
             child: Icon(
               permissionIcons[permission],
-              size: 18, 
+              size: 18,
               color: Colors.black87
             ),
           ),
@@ -800,8 +800,8 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
                     ),
                   ),
                   const SizedBox(height: 16),
-                  hasApps 
-                      ? _buildAppsSimplifiedList(apps, permission) 
+                  hasApps
+                      ? _buildAppsSimplifiedList(apps, permission)
                       : _buildSafeMessage(permission),
                 ],
               ),
@@ -903,7 +903,7 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
         Text(
           "No apps using ${permissionNames[permission]}",
           style: const TextStyle(
-            color: Colors.black87, 
+            color: Colors.black87,
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),

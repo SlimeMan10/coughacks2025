@@ -12,7 +12,7 @@ void main() {
   // Initialize the NativeRuleBridge to handle method calls from native
   print('📱 THIS IS IN DART: Initializing NativeRuleBridge in main.dart');
   NativeRuleBridge.initialize();
-  
+
   // Start preloading permissions data in the background
   print('🔄 THIS IS IN DART: Starting permissions data preloading');
   PermissionsDataService().preloadData();
