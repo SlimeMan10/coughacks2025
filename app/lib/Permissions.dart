@@ -141,8 +141,9 @@ class _PermissionsTabState extends State<PermissionsTab> {
     setState(() => _isLoading = true);
 
     try {
+      // Fetch installed apps
       final List<AppInfo> installedApps = await InstalledApps.getInstalledApps(
-        false,
+        true,
         true,
         "",
       );
