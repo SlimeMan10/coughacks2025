@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../main.dart';
+import 'main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Parent StatefulWidget class
