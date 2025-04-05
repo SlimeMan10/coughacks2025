@@ -1,4 +1,5 @@
 import 'package:app/Permissions.dart';
+import 'package:app/blocking.dart';
 import 'package:flutter/material.dart';
 import 'AppUsage.dart'; // Make sure this exports AppUsageApp
 import 'blockInfo.dart';
@@ -34,6 +35,7 @@ class _TabsState extends State<Tabs> with SingleTickerProviderStateMixin {
           children: [
             AppUsageApp(),
             PermissionsTab(),
+            Blocking(),
             BlockInfo(title: 'Block Info Placeholder'),
           ],
         ),
@@ -47,6 +49,7 @@ class _TabsState extends State<Tabs> with SingleTickerProviderStateMixin {
             tabs: const [
               Tab(icon: Icon(Icons.bar_chart)),
               Tab(icon: Icon(Icons.warning)),
+              Tab(icon: Icon(Icons.wallet)),
               Tab(icon: Icon(Icons.block)),
             ],
           ),
