@@ -219,12 +219,26 @@ class AppUsageAppState extends State<AppUsageApp>
     return totalSeconds > 0 ? totalRisk / totalSeconds : 0;
   }
 
-  String formatDuration(Duration duration) {
+  String formatDuration(Duration duration, {bool showSeconds = true}) {
     if (duration.inSeconds < 1) return "< 1s";
-    String result = "${duration.inSeconds.remainder(60)}s";
-    if (duration.inMinutes >= 1) result = "${duration.inMinutes.remainder(60)}m $result";
-    if (duration.inHours >= 1) result = "${duration.inHours}h $result";
-    if (duration.inDays >= 1) result = "${duration.inDays}d $result";
+    
+    String result = "";
+    if (showSeconds) {
+      result = "${duration.inSeconds.remainder(60)}s";
+    }
+    if (duration.inMinutes >= 1) {
+      if (showSeconds) {
+        result = "${duration.inMinutes.remainder(60)}m $result";
+      } else {
+        result = "${duration.inMinutes.remainder(60)}m";
+      }
+    }
+    if (duration.inHours >= 1) {
+      result = "${duration.inHours}h $result";
+    }
+    if (duration.inDays >= 1) {
+      result = "${duration.inDays}d $result";
+    }
     return result;
   }
 
@@ -332,10 +346,10 @@ class AppUsageAppState extends State<AppUsageApp>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  formatDuration(totalUsage).split(' ').join('\n'),
+                  formatDuration(totalUsage, showSeconds: false).split(' ').join('\n'),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 32,
+                    fontSize: 28,
                     height: 1.2,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
