@@ -45,6 +45,8 @@ class Rule {
     };
   }
 
+  Map<String, dynamic> get information => toMap();
+
   // Create a Rule from a Map
   factory Rule.fromMap(Map<String, dynamic> map) {
     return Rule(
