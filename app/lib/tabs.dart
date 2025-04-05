@@ -34,7 +34,6 @@ class _TabsState extends State<Tabs> with SingleTickerProviderStateMixin {
           children: [
             AppUsageApp(),
             PermissionsTab(),
-            Center(child: Icon(Icons.directions_transit, size: 64)),
             BlockInfo(title: 'Block Info Placeholder'),
           ],
         ),
@@ -48,7 +47,6 @@ class _TabsState extends State<Tabs> with SingleTickerProviderStateMixin {
             tabs: const [
               Tab(icon: Icon(Icons.bar_chart)),
               Tab(icon: Icon(Icons.warning)),
-              Tab(icon: Icon(Icons.one_x_mobiledata)),
               Tab(icon: Icon(Icons.block)),
             ],
           ),
