@@ -1,6 +1,7 @@
 import 'package:app/Permissions.dart';
 import 'package:flutter/material.dart';
 import 'AppUsage.dart'; // Make sure this exports AppUsageApp
+import 'blockInfo.dart';
 
 class Tabs extends StatefulWidget {
   const Tabs({super.key});
@@ -15,7 +16,7 @@ class _TabsState extends State<Tabs> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -34,6 +35,7 @@ class _TabsState extends State<Tabs> with SingleTickerProviderStateMixin {
             AppUsageApp(),
             PermissionsTab(),
             Center(child: Icon(Icons.directions_transit, size: 64)),
+            BlockInfo(title: 'Block Info Placeholder'),
           ],
         ),
         bottomNavigationBar: Material(
@@ -47,7 +49,7 @@ class _TabsState extends State<Tabs> with SingleTickerProviderStateMixin {
               Tab(icon: Icon(Icons.bar_chart)),
               Tab(icon: Icon(Icons.warning)),
               Tab(icon: Icon(Icons.one_x_mobiledata)),
-
+              Tab(icon: Icon(Icons.block)),
             ],
           ),
         ),
