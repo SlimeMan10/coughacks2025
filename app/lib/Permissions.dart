@@ -27,7 +27,7 @@ class PermissionsTab extends StatefulWidget {
   _PermissionsTabState createState() => _PermissionsTabState();
 }
 
-class _PermissionsTabState extends State<PermissionsTab> {
+class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAliveClientMixin {
   Map<String, List<AppInfo>> permissionsToApps = {};
   Map<String, List<String>> appToPermissions = {};
   List<Map<String, dynamic>> permissionCards = [];
@@ -130,6 +130,9 @@ class _PermissionsTabState extends State<PermissionsTab> {
     "android.permission.READ_CALENDAR": Colors.teal,
     "android.permission.WRITE_CALENDAR": Colors.teal,
   };
+
+  @override
+  bool get wantKeepAlive => true; // Preserve state when switching tabs
 
   @override
   void initState() {
@@ -296,6 +299,7 @@ class _PermissionsTabState extends State<PermissionsTab> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return Scaffold(
       backgroundColor: const Color(0xFF1A1A1A),
       body: _isLoading
