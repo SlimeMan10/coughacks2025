@@ -186,12 +186,12 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
                     onTapLeft: () => index > 0 ? _pageController.animateToPage(
                       index - 1,
                       duration: Duration(milliseconds: 300),
-                      curve: Curves.easeInOu
+                      curve: Curves.easeInOut
                     ) : () {},
                     onTapRight: () => _pageController.animateToPage(
                       index + 1,
                       duration: Duration(milliseconds: 300),
-                      curve: Curves.easeInOu
+                      curve: Curves.easeInOut
                     ),
                   );
                 } else {
@@ -310,7 +310,7 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
               onTap: () => _pageController.animateToPage(
                 3,
                 duration: Duration(milliseconds: 300),
-                curve: Curves.easeInOu
+                curve: Curves.easeInOut
               ),
               behavior: HitTestBehavior.translucent,
             ),

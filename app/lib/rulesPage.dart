@@ -462,7 +462,7 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
                   ),
                 ),
 
-                // Active sessions lis
+                // Active sessions list
                 AnimatedCrossFade(
                   firstChild: Column(
                     children: _activeRules.map((rule) => Padding(
@@ -472,7 +472,7 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
                   ),
                   secondChild: SizedBox(height: 0),
                   crossFadeState: _showActiveSessions
-                      ? CrossFadeState.showFirs
+                      ? CrossFadeState.showFirst
                       : CrossFadeState.showSecond,
                   duration: const Duration(milliseconds: 300),
                 ),
@@ -507,8 +507,8 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
                       ),
                     ),
                   ),
-
-                  // Inactive sessions lis
+                  
+                  // Inactive sessions list
                   AnimatedCrossFade(
                     firstChild: Column(
                       children: _inactiveRules.map((rule) => Padding(
@@ -518,7 +518,7 @@ class _RulesPageState extends State<RulesPage> with SingleTickerProviderStateMix
                     ),
                     secondChild: SizedBox(height: 0),
                     crossFadeState: _showInactiveSessions
-                        ? CrossFadeState.showFirs
+                        ? CrossFadeState.showFirst
                         : CrossFadeState.showSecond,
                     duration: const Duration(milliseconds: 300),
                   ),
