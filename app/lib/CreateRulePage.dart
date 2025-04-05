@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:app/Rule.dart';
 import 'package:installed_apps/installed_apps.dart';
 import 'package:installed_apps/app_info.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
+import 'database/ruleDatabase.dart';
+import 'database/RuleStorageTestUtil.dart';
 
 class CreateRulePage extends StatefulWidget {
   @override
@@ -1122,6 +1126,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
     );
   }
 
+<<<<<<< Updated upstream
   // Helper method to get appropriate icon for popular apps
   IconData _getIconForApp(String packageName) {
     switch (packageName) {
@@ -1204,7 +1209,248 @@ class _CreateRulePageState extends State<CreateRulePage> {
     print("=====================================================\n");
 
     Navigator.pop(context, newRule);
+=======
+Future<void> _createRule() async {
+  if (_nameController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Please enter a session name')),
+    );
+    return;
+>>>>>>> Stashed changes
   }
+
+  if (_selectedApps.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Please select at least one app to block')),
+    );
+    return;
+  }
+
+  if (!_isAllDay && _selectedDays.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Please select at least one day of the week')),
+    );
+    return;
+  }
+
+  final newRule = Rule(
+    name: _nameController.text,
+    blockedApps: _selectedApps,
+    isAllDay: _isAllDay,
+    startTime: _isAllDay ? null : _startTime,
+    endTime: _isAllDay ? null : _endTime,
+    applicableDays: _selectedDays,
+    isStrict: _isStrict,
+  );
+
+  // Show loading indicator
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return Dialog(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: Colors.black),
+              SizedBox(width: 20),
+              Text("Saving rule..."),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+
+  // Save the rule and run the test
+  try {
+    // Get SharedPreferences instance for local settings
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Save rule details to SharedPreferences
+    await prefs.setString('ruleName', newRule.name);
+    await prefs.setStringList('blockedApps', newRule.blockedApps);
+    await prefs.setBool('isAllDay', newRule.isAllDay);
+    
+    if (!newRule.isAllDay) {
+      await prefs.setString('startTimeHour', newRule.startTime!.hour.toString());
+      await prefs.setString('startTimeMinute', newRule.startTime!.minute.toString());
+      await prefs.setString('endTimeHour', newRule.endTime!.hour.toString());
+      await prefs.setString('endTimeMinute', newRule.endTime!.minute.toString());
+    }
+    
+    // Convert selectedDays to strings for storage
+    await prefs.setStringList('selectedDays', 
+      newRule.applicableDays.map((day) => day.toString()).toList());
+    
+    await prefs.setBool('isStrict', newRule.isStrict);
+    
+    // Create storage instance and save rule
+    final storage = RuleStorage();
+    
+    bool success = false;
+    if (await storage.ruleExists(newRule.name)) {
+      success = await storage.updateRule(newRule.name, newRule);
+    } else {
+      success = await storage.addRule(newRule);
+    }
+    
+    // Close loading dialog
+    Navigator.pop(context);
+    
+    // Run the storage test with the saved rule
+    if (success) {
+      try {
+        print("Running rule storage test...");
+        final testResults = await RuleStorageTestUtil.testRuleStorage(newRule);
+        print("Test completed, showing results dialog");
+        // Don't navigate back until the user has seen the test results
+        await _showTestResultsDialog(testResults);
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Rule saved successfully'),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Return to previous screen with the rule AFTER dialog is closed
+        Navigator.pop(context, newRule);
+      } catch (testError) {
+        print("Error during test: $testError");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Rule saved but test failed: $testError'),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } else {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save rule'),
+          duration: const Duration(seconds: 3),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  } catch (e) {
+    // Close loading dialog if it's showing
+    Navigator.of(context).pop();
+    
+    // Show error message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error saving rule: $e'),
+        duration: const Duration(seconds: 3),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+
+// Show test results in a dialog and return a Future that completes when dialog is closed
+Future<void> _showTestResultsDialog(String results) async {
+  print("Dialog content length: ${results.length}");
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return Dialog(
+        backgroundColor: Colors.black,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.purpleAccent, width: 2),
+        ),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.task_alt, color: Colors.purpleAccent),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Rule Storage Test Results',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purpleAccent,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.grey[900],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[700]!),
+                ),
+                padding: const EdgeInsets.all(12),
+                child: SingleChildScrollView(
+                  child: SelectableText(
+                    results,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      // Copy results to clipboard
+                      Clipboard.setData(ClipboardData(text: results));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Results copied to clipboard')),
+                      );
+                    },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.copy, size: 16, color: Colors.white70),
+                        SizedBox(width: 4),
+                        Text('Copy', style: TextStyle(color: Colors.white70)),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber,
+                      foregroundColor: Colors.black,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
 
   @override
   void dispose() {

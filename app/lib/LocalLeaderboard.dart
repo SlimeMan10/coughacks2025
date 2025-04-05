@@ -2,10 +2,12 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'ScreenTimePieChart.dart';
-import 'shareScreenshot.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:app_usage/app_usage.dart';
+
+// Placeholder for missing imports
+import 'ScreenTimePieChart.dart';
+import 'shareScreenshot.dart';
 
 class LocalLeaderboard extends StatefulWidget {
   const LocalLeaderboard({super.key});
@@ -26,48 +28,38 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
   }
 
   List<int> lastWeekScreentime = List.filled(7, 0);
-  int userScreentime = 0; // Simulated user screentime in minutes
+  int userScreentime = 0;
 
   Future<void> getScreentimeLast7Days() async {
     final AppUsage appUsage = AppUsage();
-
     DateTime now = DateTime.now();
     DateTime todayMidnight = DateTime(now.year, now.month, now.day);
 
     for (int i = 6; i >= 0; i--) {
       DateTime startOfDay = todayMidnight.subtract(Duration(days: i));
       DateTime endOfDay = startOfDay.add(Duration(days: 1));
-      print("start, end $startOfDay, $endOfDay");
 
       try {
-        List<AppUsageInfo> usage = await appUsage.getAppUsage(
-          startOfDay,
-          endOfDay,
+        List<AppUsageInfo> usage = await appUsage.getAppUsage(startOfDay, endOfDay);
+
+        Duration totalScreentime = usage.fold(
+          Duration.zero, 
+          (total, info) => total + info.usage
         );
 
-        Duration totalScreentime = Duration.zero;
-        for (var info in usage) {
-          totalScreentime += info.usage;
-        }
-        print("screentime ${totalScreentime.inMinutes} ");
         lastWeekScreentime[6-i] = totalScreentime.inMinutes;
       } catch (e) {
         print('Error getting usage for $startOfDay - $endOfDay: $e');
-        lastWeekScreentime.add(0);
+        lastWeekScreentime[6-i] = 0;
       }
     }
-    // Calculate userScreentime as the screentime today.
+    
+    // Update user screentime to today's screentime
     userScreentime = lastWeekScreentime[6];
   }
 
   final List<String> weekdays = [
-    'Mon',
-    'Tue',
-    'Wed',
-    'Thu',
-    'Fri',
-    'Sat',
-    'Sun',
+    'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun',
   ];
 
   final _day = (DateTime.now().weekday + 6) % 7;
@@ -94,16 +86,25 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
     };
   }
 
+  // Improved weekly average calculation
+  int get weeklyAverage {
+    if (lastWeekScreentime.length < 7) return 0;
+    
+    int total = lastWeekScreentime.take(6).fold(0, (sum, val) => sum + val);
+    return (total / 6).round();
+  }
+
   String getNextLowerRank(String currentRank) {
     const ranks = ['S', 'A', 'B', 'C', 'D', 'F'];
     final index = ranks.indexOf(currentRank);
-    if (index == -1 || index == ranks.length - 1) {
-      return currentRank;
-    }
-    return ranks[index + 1];
+    return (index == -1 || index == ranks.length - 1) 
+      ? currentRank 
+      : ranks[index + 1];
   }
 
   String getRankTier(int userTime, int avg) {
+    if (avg == 0) return 'B'; // Default case to prevent division by zero
+    
     double ratio = userTime / avg;
     if (ratio >= 2.0) return 'F';
     if (ratio >= 1.5) return 'D';
@@ -132,27 +133,14 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
 
   Color getRankColor(String tier) {
     switch (tier) {
-      case 'S':
-        return Colors.purple;
-      case 'A':
-        return Colors.green;
-      case 'B':
-        return Colors.blue;
-      case 'C':
-        return Colors.yellow;
-      case 'D':
-        return Colors.orange;
-      case 'F':
-        return Colors.red;
-      default:
-        return Colors.grey;
+      case 'S': return Colors.purple;
+      case 'A': return Colors.green;
+      case 'B': return Colors.blue;
+      case 'C': return Colors.yellow;
+      case 'D': return Colors.orange;
+      case 'F': return Colors.red;
+      default: return Colors.grey;
     }
-  }
-
-  void refreshLeaderboard() {
-    setState(() {
-      _rankFuture = calculateRank();
-    });
   }
 
   String formatMinutes(int minutes) {
@@ -161,14 +149,9 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
     return '${hours}h ${mins}m';
   }
 
-  int get weeklyAverage {
-    int total = lastWeekScreentime.fold(0, (sum, val) => sum + val);
-    return ((total - userScreentime) / 6).round();
-  }
-
-  int loop6(int i) {
-    if (i > 6) return i - 7;
-    return i;
+  // Improved circular indexing
+  int circularIndex(int index) {
+    return (index + _day) % 7;
   }
 
   @override
@@ -340,7 +323,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
                               touchTooltipData: BarTouchTooltipData(
                                 getTooltipItem: (group, groupIndex, rod, rodIndex) {
                                   return BarTooltipItem(
-                                    '${weekdays[loop6(group.x + _day)]}: ${formatMinutes(rod.toY.toInt())}',
+                                    '${weekdays[circularIndex(group.x)]}: ${formatMinutes(rod.toY.toInt())}',
                                     const TextStyle(color: Colors.white),
                                   );
                                 },
@@ -356,7 +339,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
                                     return SideTitleWidget(
                                       meta: meta,
                                       child: Text(
-                                        weekdays[loop6(value.toInt() + _day)],
+                                        weekdays[circularIndex(value.toInt())],
                                         style: const TextStyle(color: Colors.white70, fontSize: 12),
                                       ),
                                     );
@@ -417,7 +400,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
                                   ),
                                 ),
                               ],
-                            ),
+                              ),
                             barGroups: _buildBarGroups(),
                           ),
                         ),
