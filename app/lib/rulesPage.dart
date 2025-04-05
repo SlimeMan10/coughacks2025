@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:app/Rule.dart';
 import 'package:app/CreateRulePage.dart';
+import 'package:installed_apps/installed_apps.dart';
+
 
 class RulesPage extends StatefulWidget {
   @override
