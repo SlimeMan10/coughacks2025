@@ -11,13 +11,16 @@ class AppUsageApp extends StatefulWidget {
   AppUsageAppState createState() => AppUsageAppState();
 }
 
-class AppUsageAppState extends State<AppUsageApp> {
+class AppUsageAppState extends State<AppUsageApp> with AutomaticKeepAliveClientMixin {
   List<AppUsageInfo> _infos = [];
   Map<String, AppInfo> _appMap = {};
   bool _isLoading = false;
   String? _error;
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 1));
   DateTime _endDate = DateTime.now();
+
+  @override
+  bool get wantKeepAlive => true; // This ensures the state is kept alive
 
   @override
   void initState() {
@@ -87,6 +90,7 @@ class AppUsageAppState extends State<AppUsageApp> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     final DateFormat formatter = DateFormat('MMM d, HH:mm');
     final String timeRangeString =
         "${formatter.format(_startDate)} - ${formatter.format(_endDate)}";

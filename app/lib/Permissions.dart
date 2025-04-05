@@ -3,7 +3,6 @@ import 'package:app_usage/app_usage.dart';
 import 'package:installed_apps/installed_apps.dart';
 import 'package:installed_apps/app_info.dart';
 import 'package:flutter/services.dart'; // For platform channel
-import 'Permissions.dart'; // Import the new file
 
 const platform = MethodChannel('com.example.app/permissions');
 
@@ -25,12 +24,15 @@ class PermissionsTab extends StatefulWidget {
   _PermissionsTabState createState() => _PermissionsTabState();
 }
 
-class _PermissionsTabState extends State<PermissionsTab> {
+class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAliveClientMixin {
   Map<String, AppInfo> appMap = {};
   Map<String, List<String>> permissionsMap = {};
   List<String> privacyRisks = [];
   bool _isLoading = false;
   String? _error;
+
+  @override
+  bool get wantKeepAlive => true; // This ensures the state is kept alive
 
   @override
   void initState() {
@@ -105,6 +107,7 @@ class _PermissionsTabState extends State<PermissionsTab> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
