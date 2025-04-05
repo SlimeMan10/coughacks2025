@@ -83,10 +83,6 @@ public class DemoAccessibilityService extends AccessibilityService {
                             Log.d(TAG, "🚫 Launching overlay to block: " + packageName);
                             showBlockOverlay(ruleName);
                         }
-                        
-                        Toast.makeText(getApplicationContext(),
-                            "App: " + packageName + (shouldBlock ? " (BLOCKED by Flutter)" : " (Allowed)"),
-                            Toast.LENGTH_SHORT).show();
                     } else if (result instanceof Boolean) {
                         // For backward compatibility with older implementation
                         boolean shouldBlock = (Boolean) result;
@@ -97,10 +93,6 @@ public class DemoAccessibilityService extends AccessibilityService {
                             Log.d(TAG, "🚫 Launching overlay to block: " + packageName);
                             showBlockOverlay(null);
                         }
-                        
-                        Toast.makeText(getApplicationContext(),
-                            "App: " + packageName + (shouldBlock ? " (BLOCKED by Flutter)" : " (Allowed)"),
-                            Toast.LENGTH_SHORT).show();
                     }
                 }
                 
@@ -130,10 +122,6 @@ public class DemoAccessibilityService extends AccessibilityService {
             Log.d(TAG, "🚫 Launching overlay to block app: " + packageName);
             showBlockOverlay("System Rule"); // Default rule name for native blocking
         }
-        
-        Toast.makeText(getApplicationContext(),
-            "App: " + packageName + (shouldBlock ? " (BLOCKED by Native)" : " (Allowed)"),
-            Toast.LENGTH_SHORT).show();
     }
     
     private void showBlockOverlay(String ruleName) {

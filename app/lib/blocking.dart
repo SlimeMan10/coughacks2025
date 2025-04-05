@@ -183,18 +183,25 @@ class _BlockingState extends State<Blocking> with WidgetsBindingObserver {
               ),
               const SizedBox(height: 30),
               _buildPermissionRow(
-                label: "Accessibility Service",
+                label: "Screen Time Tracking",
+                description: "Allows tracking app usage and enforcing limits",
                 isEnabled: _isAccessibilityEnabled,
               ),
               const SizedBox(height: 15),
               _buildPermissionRow(
-                label: "Draw Over Other Apps",
+                label: "Display Over Apps",
+                description: "Enables blocking notifications when limits are reached",
                 isEnabled: _hasOverlayPermission,
               ),
               const SizedBox(height: 40),
               if (_isAccessibilityEnabled != true || _hasOverlayPermission != true)
-                ElevatedButton(
+                ElevatedButton.icon(
                   onPressed: _requestPermissions,
+                  icon: Icon(Icons.security, size: 24),
+                  label: Text(
+                    "Grant Screen Access",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blueGrey[800],
                     foregroundColor: Colors.white,
@@ -202,9 +209,9 @@ class _BlockingState extends State<Blocking> with WidgetsBindingObserver {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    textStyle: const TextStyle(fontSize: 16),
+                    elevation: 4,
+                    shadowColor: Colors.black26,
                   ),
-                  child: const Text("Grant Permissions"),
                 )
               else
                 Padding(
@@ -228,7 +235,7 @@ class _BlockingState extends State<Blocking> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildPermissionRow({required String label, required bool? isEnabled}) {
+  Widget _buildPermissionRow({required String label, required String description, required bool? isEnabled}) {
     IconData iconData;
     Color iconColor;
     String statusText;
@@ -251,10 +258,21 @@ class _BlockingState extends State<Blocking> with WidgetsBindingObserver {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(color: Colors.white, fontSize: 18),
-            overflow: TextOverflow.ellipsis,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 5),
+              Text(
+                description,
+                style: TextStyle(color: Colors.grey[400], fontSize: 16),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
         const SizedBox(width: 15),

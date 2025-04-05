@@ -285,10 +285,17 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
                 });
               },
               children: [
-                // Screen 1 - Basic Introduction
+                // Screen 1 - The Hook
                 OnboardingScreen(
-                  title: "Screen 1",
-                  content: "First onboarding screen.",
+                  title: "The Hook — We're All Glued to Our Screens",
+                  emoji: "📱",
+                  useBoxedIcon: false,
+                  content: "",
+                  bulletPoints: [
+                    '61% of people admit they\'re addicted to their phones.',
+                    'The average person taps their screen over 2,617 times a day.',
+                    'We\'re living in a world of constant distraction — and it\'s costing us.',
+                  ],
                   onTapLeft: () => {}, // Do nothing on first screen
                   onTapRight: () => _pageController.animateToPage(
                     1, 
@@ -297,10 +304,17 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
                   ),
                 ),
                 
-                // Screen 2
+                // Screen 2 - What It's Costing You
                 OnboardingScreen(
-                  title: "Screen 2",
-                  content: "Second onboarding screen.",
+                  title: "What It's Costing You",
+                  emoji: "⏳",
+                  useBoxedIcon: false,
+                  content: "",
+                  bulletPoints: [
+                    'The average young adult spends 7+ hours a day on screens.',
+                    'That\'s over 11 years of your lifetime — lost.',
+                    'Time we could spend learning, creating, or just being present.',
+                  ],
                   onTapLeft: () => _pageController.animateToPage(
                     0, 
                     duration: Duration(milliseconds: 300), 
@@ -313,10 +327,17 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
                   ),
                 ),
                 
-                // Screen 3
+                // Screen 3 - The Hidden Trade-Off
                 OnboardingScreen(
-                  title: "Screen 3",
-                  content: "Third onboarding screen.",
+                  title: "The Hidden Trade-Off — Your Data",
+                  emoji: "🔒",
+                  useBoxedIcon: false,
+                  content: "",
+                  bulletPoints: [
+                    '87% of apps share your data with third parties.',
+                    'Some even record your microphone while you\'re not using them.',
+                    'You\'re not just losing time — you\'re giving away your privacy.',
+                  ],
                   onTapLeft: () => _pageController.animateToPage(
                     1, 
                     duration: Duration(milliseconds: 300), 
@@ -329,10 +350,20 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
                   ),
                 ),
                 
-                // Screen 4
+                // Screen 4 - Take Back Control
                 OnboardingScreen(
-                  title: "Screen 4",
-                  content: "Fourth onboarding screen.",
+                  title: "Take Back Control",
+                  emoji: null,
+                  useBoxedIcon: false,
+                  content: "We built this app to help you:",
+                  bulletPoints: [
+                    '✅  Track screen time',
+                    '✅  Block distractions',
+                    '✅  Expose privacy risks',
+                    '✅  Reclaim your focus and your freedom',
+                    'Let\'s take back control.',
+                  ],
+                  customWidget: _buildShieldIcon(),
                   onTapLeft: () => _pageController.animateToPage(
                     2, 
                     duration: Duration(milliseconds: 300), 
@@ -343,6 +374,7 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
                     duration: Duration(milliseconds: 300), 
                     curve: Curves.easeInOut
                   ),
+                  extraBottomPadding: true,
                 ),
                 
                 // Screen 5 - Redesigned Final Screen with white aesthetic
@@ -387,11 +419,6 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
 
                     // Info blocks with new style
                     _infoBlock(
-                      title: "Welcome to Blockr",
-                      content: "The all-in-one privacy app for your phone!",
-                    ),
-                    const SizedBox(height: 12),
-                    _infoBlock(
                       title: "📊 Usage Stats",
                       content: "Game-ified usage data with smart data warnings.",
                     ),
@@ -406,7 +433,43 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
                     const SizedBox(height: 20),
 
                     Text(
-                      "To get started, you must give some permissions.",
+                      "To get started, please enable",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: "Screen Time",
+                            style: TextStyle(
+                              color: Colors.black,
+                            ),
+                          ),
+                          TextSpan(text: " and "),
+                          TextSpan(
+                            text: "Accessibility",
+                            style: TextStyle(
+                              color: Colors.black,
+                            ),
+                          ),
+                          TextSpan(text: " access"),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Blockr never stores your data; permissions are only used to monitor usage locally on your device.",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.black87,
@@ -415,21 +478,24 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
                     ),
                     const SizedBox(height: 24),
 
-                    ElevatedButton(
+                    ElevatedButton.icon(
                       onPressed: () {
                         _requestPermissionsAndNavigate();
                       },
+                      icon: Icon(Icons.security, size: 24),
+                      label: Text(
+                        "Grant Access",
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 32, vertical: 12),
+                            horizontal: 32, vertical: 16),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text(
-                        "Let's Go!",
-                        style: TextStyle(fontSize: 18),
+                        elevation: 4,
+                        shadowColor: Colors.black38,
                       ),
                     ),
                     const SizedBox(height: 40),
@@ -522,6 +588,21 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
       _checkAndNavigateIfPermissionsGranted();
     });
   }
+
+  Widget _buildShieldIcon() {
+    return Container(
+      width: 160,
+      height: 160,
+      child: Center(
+        child: Text(
+          "🧭",
+          style: TextStyle(
+            fontSize: 100,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // Reusable Onboarding Screen Widget
@@ -530,6 +611,11 @@ class OnboardingScreen extends StatelessWidget {
   final String content;
   final VoidCallback onTapLeft;
   final VoidCallback onTapRight;
+  final String? emoji;
+  final List<String>? bulletPoints;
+  final bool useBoxedIcon;
+  final Widget? customWidget;
+  final bool extraBottomPadding;
 
   const OnboardingScreen({
     Key? key,
@@ -537,37 +623,89 @@ class OnboardingScreen extends StatelessWidget {
     required this.content,
     required this.onTapLeft,
     required this.onTapRight,
+    this.emoji,
+    this.bulletPoints,
+    this.useBoxedIcon = false,
+    this.customWidget,
+    this.extraBottomPadding = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
     
     return Stack(
       children: [
         // Content
-        Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+        SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(height: screenHeight * 0.12),
+                if (emoji != null)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 60),
+                    child: Text(
+                      emoji!,
+                      style: const TextStyle(
+                        fontSize: 100,
+                      ),
+                    ),
+                  ),
+                if (customWidget != null)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 60),
+                    child: customWidget,
+                  ),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                    height: 1.2,
+                    fontFamily: 'SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif',
+                    letterSpacing: -0.5,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              SizedBox(height: 16),
-              Text(
-                content,
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey[700],
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+                if (content.isNotEmpty) ...[
+                  const SizedBox(height: 32),
+                  Text(
+                    content,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      color: Colors.black87,
+                      height: 1.4,
+                      fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif',
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                if (bulletPoints != null) ...[
+                  const SizedBox(height: 40),
+                  ...bulletPoints!.map((point) => Padding(
+                    padding: EdgeInsets.only(bottom: bulletPoints!.last == point && extraBottomPadding ? 50 : 25),
+                    child: Text(
+                      point,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        color: Colors.black87,
+                        height: 1.4,
+                        fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif',
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  )).toList(),
+                ],
+                SizedBox(height: screenHeight * (extraBottomPadding ? 0.22 : 0.2)),
+              ],
+            ),
           ),
         ),
         

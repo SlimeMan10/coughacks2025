@@ -270,7 +270,7 @@ class _BlockInfoState extends State<BlockInfo> {
                             runSpacing: 8,
                             children: _exemptApps
                                 .map((app) => Chip(
-                                      backgroundColor: Colors.blue[700],
+                                      backgroundColor: Color(0xFFD0D0D0),
                                       label: Text(app, style: const TextStyle(color: Colors.white)),
                                       deleteIconColor: Colors.white,
                                       onDeleted: () {

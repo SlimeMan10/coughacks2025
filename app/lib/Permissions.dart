@@ -306,6 +306,11 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
     return Container(
       padding: const EdgeInsets.all(20),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      width: double.infinity,
+      constraints: const BoxConstraints(
+        minHeight: 300,
+        maxWidth: double.infinity,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -356,22 +361,30 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
                   color: Colors.black87,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  permissionNames[permission] ?? "Unknown",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
+                Flexible(
+                  child: Text(
+                    permissionNames[permission] ?? "Unknown",
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          Text(
-            permissionRisks[permission] ?? "Unknown risk",
-            style: const TextStyle(fontSize: 14, color: Colors.black54),
-            textAlign: TextAlign.center,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              permissionRisks[permission] ?? "Unknown risk",
+              style: const TextStyle(fontSize: 14, color: Colors.black54),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           const SizedBox(height: 24),
           Row(
@@ -573,13 +586,13 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
                           children: [
                             _buildStatBadge(
                               count: _dataService.dangerousPermissionsList.length,
-                              label: "permissions tracked",
+                              label: "permissions",
                               icon: Icons.shield_outlined,
                             ),
                             const SizedBox(width: 12),
                             _buildStatBadge(
                               count: appToPermissions.length,
-                              label: "apps with permissions",
+                              label: "apps",
                               icon: Icons.apps,
                             ),
                           ],
@@ -636,7 +649,7 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
   Widget _buildStatBadge({required int count, required String label, required IconData icon}) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
         decoration: BoxDecoration(
           color: Colors.grey.shade100,
           borderRadius: BorderRadius.circular(8),
@@ -653,26 +666,34 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
               ),
               child: Icon(icon, size: 20, color: Colors.black87),
             ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  count.toString(),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      count.toString(),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
                   ),
-                ),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade700,
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -766,6 +787,8 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
               fontWeight: FontWeight.bold,
               color: Colors.black,
             ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -797,6 +820,8 @@ class _PermissionsTabState extends State<PermissionsTab> with AutomaticKeepAlive
                     child: Text(
                       permissionRisks[permission] ?? "Unknown risk",
                       style: TextStyle(color: Colors.grey.shade800, fontSize: 14),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const SizedBox(height: 16),

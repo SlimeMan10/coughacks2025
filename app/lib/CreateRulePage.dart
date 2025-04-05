@@ -689,7 +689,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
                     child: Text(
                       'Add to templates',
                       style: TextStyle(
-                        color: Colors.blue,
+                        color: Color(0xFFD0D0D0),
                         fontWeight: FontWeight.w500,
                         fontSize: 16,
                       ),

@@ -133,10 +133,9 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
 
   Color getRankColor(String tier) {
     switch (tier) {
-
       case 'S': return Colors.purple;
       case 'A': return Colors.green;
-      case 'B': return Colors.blue;
+      case 'B': return Color(0xFFD0D0D0);
       case 'C': return Colors.yellow;
       case 'D': return Colors.orange;
       case 'F': return Colors.red;
@@ -567,7 +566,7 @@ class _LocalLeaderboardState extends State<LocalLeaderboard> {
             barRods: [
               BarChartRodData(
                 toY: value,
-                color: index == 6 ? Colors.blue : Colors.grey.shade300,
+                color: index == 6 ? Color(0xFFD0D0D0) : Colors.grey.shade300,
                 width: 20,
                 borderRadius: BorderRadius.circular(4),
                 backDrawRodData: BackgroundBarChartRodData(
