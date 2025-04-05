@@ -352,14 +352,19 @@ class _CreateRulePageState extends State<CreateRulePage> {
                                   }
                                 }
 
-                                // For important apps, use the predefined name if the app isn't found
+                                // Get a user-friendly app name
                                 String appName = "";
                                 if (appInfo != null) {
                                   appName = appInfo.name;
                                 } else if (_importantApps.containsKey(packageName)) {
                                   appName = _importantApps[packageName]!;
                                 } else {
-                                  appName = packageName.split('.').last;
+                                  // Get a simplified name without package details
+                                  appName = packageName.split('.').last.replaceAll('_', ' ').trim();
+                                  // Capitalize first letter for better presentation
+                                  if (appName.isNotEmpty) {
+                                    appName = appName[0].toUpperCase() + appName.substring(1);
+                                  }
                                 }
 
                                 return Chip(
@@ -379,7 +384,7 @@ class _CreateRulePageState extends State<CreateRulePage> {
                                   onDeleted: () {
                                     setState(() {
                                       _selectedApps.remove(packageName);
-                                      print("Removed from selection: ${appName} ($packageName)");
+                                      print("Removed from selection: ${appName}");
                                     });
                                   },
                                   backgroundColor: Colors.grey.shade100,
@@ -970,24 +975,16 @@ class _CreateRulePageState extends State<CreateRulePage> {
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              subtitle: Text(
-                                app.packageName,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
-                                  fontFamily: 'monospace',
-                                ),
-                              ),
                               trailing: Checkbox(
                                 value: isSelected,
                                 onChanged: (value) {
                                   setModalState(() {
                                     if (value == true) {
                                       _selectedApps.add(app.packageName);
-                                      print("Added to block list: ${app.name} (${app.packageName})");
+                                      print("Added to block list: ${app.name}");
                                     } else {
                                       _selectedApps.remove(app.packageName);
-                                      print("Removed from block list: ${app.name} (${app.packageName})");
+                                      print("Removed from block list: ${app.name}");
                                     }
                                   });
                                   // Update parent state too
@@ -999,10 +996,10 @@ class _CreateRulePageState extends State<CreateRulePage> {
                                 setModalState(() {
                                   if (isSelected) {
                                     _selectedApps.remove(app.packageName);
-                                    print("Removed from block list: ${app.name} (${app.packageName})");
+                                    print("Removed from block list: ${app.name}");
                                   } else {
                                     _selectedApps.add(app.packageName);
-                                    print("Added to block list: ${app.name} (${app.packageName})");
+                                    print("Added to block list: ${app.name}");
                                   }
                                 });
                                 // Update parent state too
